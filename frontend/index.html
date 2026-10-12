@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CampusFlow | Student Management System</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <a class="brand" href="#" data-page="overview"><span class="brand-icon">C</span><span>Campus<span class="brand-light">Flow</span></span></a>
+  <p class="side-label">WORKSPACE</p>
+  <nav class="navigation">
+    <button class="nav-item active" data-page="overview">▦ <span class="nav-label">Overview</span></button>
+    <button class="nav-item" data-page="students">♙ <span class="nav-label">Students</span><span id="navStudentCount">0</span></button>
+    <button class="nav-item" data-page="departments">▦ <span class="nav-label">Departments</span></button>
+    <button class="nav-item" data-page="courses">▤ <span class="nav-label">Courses</span></button>
+    <button class="nav-item" data-page="enrollments">⇄ <span class="nav-label">Enrollment</span><span id="navEnrollmentCount">0</span></button>
+    <button class="nav-item" data-page="attendance">◷ <span class="nav-label">Attendance</span></button>
+    <button class="nav-item" data-page="grades">◎ <span class="nav-label">Grades &amp; GPA</span></button>
+    <button class="nav-item" data-page="reports">▥ <span class="nav-label">Reports</span></button>
+  </nav>
+  <div class="sidebar-help"><h3>CampusFlow</h3><p>Java + JDBC + MySQL student management system.</p><button id="helpButton" class="text-button" type="button">Help &amp; API status ↗</button></div>
+</aside>
+
+<main class="main-content">
+  <header class="topbar">
+    <button id="menuButton" class="menu-button" type="button">☰</button>
+    <div class="breadcrumb">Workspace / <strong id="breadcrumb">Overview</strong></div>
+    <div class="topbar-actions">
+      <input id="globalSearch" class="global-search" type="search" placeholder="Search students...">
+      <span class="admin-avatar" id="userAvatar">A</span>
+      <span class="admin-name" id="userName">Admin</span>
+      <button id="logoutButton" class="secondary-button logout-button" type="button">Log out</button>
+    </div>
+  </header>
+
+  <!-- OVERVIEW -->
+  <section id="overviewPage" class="page">
+    <div class="page-heading">
+      <div><p class="eyebrow">STUDENT MANAGEMENT</p><h1 id="greeting">Good day ✦</h1><p class="subtitle">A live overview of your institution's records from MySQL.</p></div>
+      <button class="primary-button" id="addStudentTop" type="button">＋ Add student</button>
+    </div>
+    <div class="stats-grid">
+      <article class="stat-card"><div class="stat-top">Total students <span>♙</span></div><div class="stat-number" id="totalStudents">—</div><p class="stat-caption">Saved student records</p></article>
+      <article class="stat-card"><div class="stat-top">Courses offered <span>▤</span></div><div class="stat-number" id="totalCourses">—</div><p class="stat-caption">Available courses</p></article>
+      <article class="stat-card"><div class="stat-top">Confirmed enrollments <span>✓</span></div><div class="stat-number" id="totalConfirmed">—</div><p class="stat-caption"><span id="totalWaitlisted">0</span> waitlisted</p></article>
+      <article class="stat-card"><div class="stat-top">Average attendance <span>◷</span></div><div class="stat-number" id="overviewAttendance">—</div><p class="stat-caption">Present + late ÷ classes marked</p></article>
+    </div>
+    <div class="dashboard-grid">
+      <article class="panel"><h2>Students by year</h2><p class="muted">Year is worked out from the semester (Sem 1–2 = 1st Year …)</p><div id="yearBreakdown" class="breakdown"></div></article>
+      <article class="panel"><h2>Students by department</h2><p class="muted">Calculated from saved student records</p><div id="departmentOverview" class="status-overview"></div><div class="info-banner" id="dashboardNote">Connecting to backend...</div></article>
+    </div>
+    <article class="panel">
+      <div class="panel-heading"><div><h2>Recently added students</h2><p class="muted">Latest saved records</p></div><button class="text-button" data-goto="students" type="button">View all students →</button></div>
+      <div class="table-wrap"><table><thead><tr><th>STUDENT</th><th>STUDENT ID</th><th>DEPARTMENT</th><th>YEAR</th><th>SEMESTER</th></tr></thead><tbody id="recentStudentsBody"></tbody></table></div>
+      <p id="recentEmpty" class="empty-state hidden">No student records yet.</p>
+    </article>
+  </section>
+
+  <!-- STUDENTS -->
+  <section id="studentsPage" class="page hidden">
+    <div class="page-heading">
+      <div><p class="eyebrow">RECORD MANAGEMENT</p><h1>Students</h1><p class="subtitle">Add, import and search student records stored in MySQL.</p></div>
+      <div class="heading-actions">
+        <button class="secondary-button" data-import="students" type="button">📄 Import PDF</button>
+        <button class="primary-button" id="addStudentButton" type="button">＋ Add student</button>
+      </div>
+    </div>
+    <article class="panel">
+      <div class="filter-bar">
+        <input id="studentSearch" type="search" placeholder="Search name, ID, email or department">
+        <select id="yearFilter"><option value="all">All years</option><option value="1">1st Year</option><option value="2">2nd Year</option><option value="3">3rd Year</option><option value="4">4th Year</option></select>
+        <button class="secondary-button" id="exportStudentsButton" type="button">Export CSV</button>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>STUDENT</th><th>STUDENT ID</th><th>DEPARTMENT</th><th>YEAR</th><th>SEMESTER</th><th>GPA</th><th>ATTENDANCE</th></tr></thead><tbody id="studentsBody"></tbody></table></div>
+      <p id="studentsEmpty" class="empty-state hidden">No matching students found.</p>
+    </article>
+  </section>
+
+  <!-- DEPARTMENTS -->
+  <section id="departmentsPage" class="page hidden">
+    <div class="page-heading">
+      <div><p class="eyebrow">ACADEMIC ORGANIZATION</p><h1>Departments</h1><p class="subtitle">Manage departments and assign students directly to a department.</p></div>
+      <button class="primary-button" id="addDepartmentButton" type="button">＋ Add department</button>
+    </div>
+    <article class="panel">
+      <div class="panel-heading"><div><h2>Department directory</h2><p class="muted">Departments loaded from MySQL</p></div></div>
+      <div class="table-wrap"><table><thead><tr><th>DEPARTMENT ID</th><th>DEPARTMENT NAME</th><th>STUDENTS</th><th>ACTIONS</th></tr></thead><tbody id="departmentsBody"></tbody></table></div>
+      <p id="departmentsEmpty" class="empty-state hidden">No departments yet. Add your first department.</p>
+    </article>
+  </section>
+
+  <!-- COURSES -->
+  <section id="coursesPage" class="page hidden">
+    <div class="page-heading">
+      <div><p class="eyebrow">ACADEMIC CATALOG</p><h1>Courses</h1><p class="subtitle">Course details, capacities, prerequisites and the students enrolled in each course.</p></div>
+    </div>
+    <div class="stats-grid three">
+      <article class="stat-card"><div class="stat-top">Total courses</div><div class="stat-number" id="courseCount">—</div></article>
+      <article class="stat-card"><div class="stat-top">Total capacity</div><div class="stat-number" id="courseCapacity">—</div></article>
+      <article class="stat-card"><div class="stat-top">Seats used</div><div class="stat-number" id="seatsUsed">—</div></article>
+    </div>
+    <article class="panel">
+      <div class="panel-heading"><div><h2>Course catalog</h2><p class="muted">Loaded from the courses table</p></div></div>
+      <div class="table-wrap"><table><thead><tr><th>COURSE CODE</th><th>COURSE NAME</th><th>CREDITS</th><th>CAPACITY</th><th>PREREQUISITE</th><th>ACTIONS</th></tr></thead><tbody id="coursesBody"></tbody></table></div>
+      <p id="coursesEmpty" class="empty-state hidden">No courses found. Run sql/schema.sql to add the sample courses.</p>
+    </article>
+  </section>
+
+  <!-- ENROLLMENT -->
+  <section id="enrollmentsPage" class="page hidden">
+    <div class="page-heading">
+      <div><p class="eyebrow">COURSE ENROLLMENT</p><h1>Enrollment</h1><p class="subtitle">Enroll students in courses. A grade or passed prerequisite is not required; duplicate and capacity rules are checked.</p></div>
+      <div class="heading-actions">
+        <button class="secondary-button" data-import="enrollments" type="button">📄 Import PDF</button>
+        <button class="primary-button" id="addEnrollmentButton" type="button">＋ New enrollment</button>
+      </div>
+    </div>
+    <div class="stats-grid three">
+      <article class="stat-card"><div class="stat-top">Confirmed</div><div class="stat-number" id="confirmedCount">0</div></article>
+      <article class="stat-card"><div class="stat-top">Waitlisted</div><div class="stat-number" id="waitlistCount">0</div></article>
+      <article class="stat-card"><div class="stat-top">Total</div><div class="stat-number" id="enrollmentTotal">0</div></article>
+    </div>
+    <article class="panel">
+      <div class="filter-bar">
+        <input id="enrollmentSearch" type="search" placeholder="Search student or course">
+        <select id="enrollmentStatusFilter"><option value="all">All statuses</option><option value="CONFIRMED">Confirmed</option><option value="WAITLISTED">Waitlisted</option></select>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>ENROLL. ID</th><th>STUDENT</th><th>COURSE</th><th>STATUS</th><th>DATE</th></tr></thead><tbody id="enrollmentsBody"></tbody></table></div>
+      <p id="enrollmentsEmpty" class="empty-state hidden">No enrollments yet.</p>
+    </article>
+  </section>
+
+  <!-- ATTENDANCE -->
+  <section id="attendancePage" class="page hidden">
+    <div class="page-heading">
+      <div><p class="eyebrow">CLASS RECORDS</p><h1>Attendance</h1><p class="subtitle">Record attendance by selecting a student, date, course and status. Below 75% is flagged.</p></div>
+      <div class="heading-actions">
+        <button class="secondary-button" data-import="attendance" type="button">📄 Import PDF</button>
+      </div>
+    </div>
+    <div class="stats-grid">
+      <article class="stat-card"><div class="stat-top">Records</div><div class="stat-number" id="attendanceTotal">0</div><p class="stat-caption">Attendance entries saved</p></article>
+      <article class="stat-card"><div class="stat-top">Overall attendance</div><div class="stat-number" id="attendanceRate">—</div><p class="stat-caption">Present + late</p></article>
+      <article class="stat-card"><div class="stat-top">Marked today</div><div class="stat-number" id="attendanceToday">0</div><p class="stat-caption" id="attendanceTodayDate"></p></article>
+      <article class="stat-card"><div class="stat-top">Below 75%</div><div class="stat-number" id="attendanceLow">0</div><p class="stat-caption">Student–course pairs</p></article>
+    </div>
+
+    <article class="panel">
+      <div class="panel-heading"><div><h2>Mark attendance</h2><p class="muted">Select one student, date, course and status.</p></div></div>
+      <form id="attendanceForm" class="stack-form">
+        <label>Student<select id="attendanceStudent" required><option value="">Select student</option></select></label>
+        <label>Date<input id="attendanceDate" type="date" required></label>
+        <label>Course<select id="attendanceCourse" required><option value="">Select course</option></select></label>
+        <label>Status<select id="attendanceStatus" required><option value="PRESENT">Present</option><option value="ABSENT">Absent</option><option value="LATE">Late</option></select></label>
+        <button class="primary-button" type="submit">Save attendance</button>
+      </form>
+      <p id="attendanceMessage" class="form-message hidden" aria-live="polite"></p>
+    </article>
+
+    <article class="panel">
+      <div class="panel-heading"><div><h2>Attendance summary</h2><p class="muted">Per student, per course</p></div></div>
+      <div class="table-wrap"><table><thead><tr><th>STUDENT</th><th>COURSE</th><th>PRESENT</th><th>LATE</th><th>ABSENT</th><th>TOTAL</th><th>ATTENDANCE</th></tr></thead><tbody id="attendanceSummaryBody"></tbody></table></div>
+      <p id="attendanceSummaryEmpty" class="empty-state hidden">No attendance marked yet.</p>
+    </article>
+
+    <article class="panel">
+      <div class="panel-heading"><div><h2>Attendance history</h2><p class="muted">Every saved entry</p></div></div>
+      <div class="filter-bar">
+        <input id="attendanceSearch" type="search" placeholder="Search student or course">
+        <select id="attendanceCourseFilter"><option value="all">All courses</option></select>
+        <select id="attendanceStatusFilter"><option value="all">All statuses</option><option value="PRESENT">Present</option><option value="LATE">Late</option><option value="ABSENT">Absent</option></select>
+        <input id="attendanceDateFilter" type="date">
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>DATE</th><th>STUDENT</th><th>COURSE</th><th>STATUS</th></tr></thead><tbody id="attendanceBody"></tbody></table></div>
+      <p id="attendanceEmpty" class="empty-state hidden">No matching attendance records.</p>
+    </article>
+  </section>
+
+  <!-- GRADES -->
+  <section id="gradesPage" class="page hidden">
+    <div class="page-heading">
+      <div><p class="eyebrow">ACADEMIC PERFORMANCE</p><h1>Grades &amp; GPA</h1><p class="subtitle">Record marks (0–100) for a student and department.</p></div>
+      <div class="heading-actions">
+        <button class="secondary-button" data-import="grades" type="button">📄 Import PDF</button>
+      </div>
+    </div>
+    <div class="dashboard-grid">
+      <article class="panel">
+        <h2>Record or update grade</h2><p class="muted">Saved in the department grades table.</p>
+        <form id="gradeForm" class="stack-form">
+          <label>Student<select id="gradeStudent" required><option value="">Select student</option></select></label>
+          <label>Department<select id="gradeDepartment" required><option value="">Select department</option></select></label>
+          <label>Marks (0–100)<input id="gradeMarks" type="number" min="0" max="100" step="0.01" required></label>
+          <button class="primary-button" type="submit">Save grade</button>
+        </form>
+        <p id="gradeMessage" class="form-message hidden" aria-live="polite"></p>
+      </article>
+      <article class="panel">
+        <h2>Calculate GPA</h2><p class="muted">Average department marks ÷ 10.</p>
+        <form id="gpaForm" class="stack-form">
+          <label>Student<select id="gpaStudent" required><option value="">Select student</option></select></label>
+          <button class="primary-button" type="submit">Calculate GPA</button>
+        </form>
+        <div id="gpaResult" class="gpa-result hidden"></div>
+      </article>
+    </div>
+    <article class="panel">
+      <div class="panel-heading"><div><h2>Grade records</h2><p class="muted">Loaded from the department grades table</p></div><button class="secondary-button" id="refreshGradesButton" type="button">Refresh</button></div>
+      <div class="table-wrap"><table><thead><tr><th>STUDENT</th><th>DEPARTMENT</th><th>MARKS</th><th>RESULT</th></tr></thead><tbody id="gradesBody"></tbody></table></div>
+      <p id="gradesEmpty" class="empty-state hidden">No grade records yet.</p>
+    </article>
+  </section>
+
+  <!-- REPORTS -->
+  <section id="reportsPage" class="page hidden">
+    <div class="page-heading"><div><p class="eyebrow">INSTITUTIONAL RECORDS</p><h1>Reports</h1><p class="subtitle">Export reports from your live MySQL database.</p></div></div>
+    <div class="report-grid">
+      <article class="panel report-panel"><h2>Student report</h2><p>IDs, names, emails, department, year, semester, GPA and attendance.</p><button class="primary-button" id="reportStudentsButton" type="button">Download student CSV</button></article>
+      <article class="panel report-panel"><h2>Enrollment report</h2><p>Students, courses and enrollment status.</p><button class="primary-button" id="reportEnrollmentsButton" type="button">Download enrollment CSV</button></article>
+      <article class="panel report-panel"><h2>Attendance report</h2><p>Every attendance entry with date and status.</p><button class="primary-button" id="reportAttendanceButton" type="button">Download attendance CSV</button></article>
+      <article class="panel report-panel"><h2>Course catalog</h2><p>Code, name, credits, capacity, prerequisite and seats used.</p><button class="primary-button" id="reportCoursesButton" type="button">Download course CSV</button></article>
+    </div>
+  </section>
+</main>
+
+<!-- Add student modal -->
+<div id="studentModal" class="modal-backdrop hidden">
+  <section class="modal" role="dialog" aria-modal="true" aria-labelledby="studentModalTitle">
+    <div class="modal-heading"><div><p class="eyebrow">STUDENT RECORD</p><h2 id="studentModalTitle">Add student</h2></div><button id="closeStudentModal" class="close-button" type="button" aria-label="Close">×</button></div>
+    <form id="studentForm">
+      <div class="form-grid">
+        <label>Student ID<input id="newStudentId" type="number" min="1" required placeholder="e.g. 101"></label>
+        <label>Full name<input id="newStudentName" required maxlength="100"></label>
+        <label>Email address<input id="newStudentEmail" type="email" required maxlength="150"></label>
+        <label>Year<select id="newStudentYear" required><option value="">Select year</option><option value="1">1st Year</option><option value="2">2nd Year</option><option value="3">3rd Year</option><option value="4">4th Year</option></select></label>
+        <label>Semester<select id="newStudentSemester" required><option value="">Select year first</option></select></label>
+        <label>Department<select id="newStudentDepartment" required><option value="">Select department</option></select></label>
+      </div>
+      <p id="studentFormError" class="form-error hidden" role="alert"></p>
+      <div class="modal-actions"><button type="button" id="cancelStudentModal" class="secondary-button">Cancel</button><button type="submit" class="primary-button">Save student</button></div>
+    </form>
+  </section>
+</div>
+
+<!-- Enrollment modal -->
+<div id="enrollmentModal" class="modal-backdrop hidden">
+  <section class="modal" role="dialog" aria-modal="true" aria-labelledby="enrollmentModalTitle">
+    <div class="modal-heading"><div><p class="eyebrow">ENROLLMENT</p><h2 id="enrollmentModalTitle">New enrollment</h2></div><button id="closeEnrollmentModal" class="close-button" type="button" aria-label="Close">×</button></div>
+    <form id="enrollmentForm" class="stack-form">
+      <label>Student<select id="enrollmentStudent" required><option value="">Select student</option></select></label>
+      <label>Course<select id="enrollmentCourse" required><option value="">Select course</option></select></label>
+      <p class="muted" id="enrollmentHint"></p>
+      <p id="enrollmentError" class="form-error hidden" role="alert"></p>
+      <div class="modal-actions"><button type="button" id="cancelEnrollmentModal" class="secondary-button">Cancel</button><button class="primary-button" type="submit">Enroll</button></div>
+    </form>
+  </section>
+</div>
+
+<!-- Department modal -->
+<div id="departmentModal" class="modal-backdrop hidden">
+  <section class="modal" role="dialog" aria-modal="true" aria-labelledby="departmentModalTitle">
+    <div class="modal-heading"><div><p class="eyebrow">DEPARTMENT</p><h2 id="departmentModalTitle">Add department</h2></div><button id="closeDepartmentModal" class="close-button" type="button" aria-label="Close">×</button></div>
+    <form id="departmentForm" class="stack-form">
+      <label>Department ID<input id="newDepartmentId" type="number" min="1" required placeholder="e.g. 3"></label>
+      <label>Department name<input id="newDepartmentName" required maxlength="100" placeholder="e.g. Electronics Engineering"></label>
+      <p id="departmentFormError" class="form-error hidden" role="alert"></p>
+      <div class="modal-actions"><button type="button" id="cancelDepartmentModal" class="secondary-button">Cancel</button><button type="submit" class="primary-button">Save department</button></div>
+    </form>
+  </section>
+</div>
+
+<!-- Assign student to department modal -->
+<div id="assignModal" class="modal-backdrop hidden">
+  <section class="modal" role="dialog" aria-modal="true" aria-labelledby="assignModalTitle">
+    <div class="modal-heading"><div><p class="eyebrow">DEPARTMENT</p><h2 id="assignModalTitle">Assign student</h2></div><button id="closeAssignModal" class="close-button" type="button" aria-label="Close">×</button></div>
+    <form id="assignForm" class="stack-form">
+      <label>Student<select id="assignStudent" required><option value="">Select student</option></select></label>
+      <label>Department<select id="assignDepartment" required><option value="">Select department</option></select></label>
+      <p class="muted" id="assignHint"></p>
+      <p id="assignError" class="form-error hidden" role="alert"></p>
+      <div class="modal-actions"><button type="button" id="cancelAssignModal" class="secondary-button">Cancel</button><button type="submit" class="primary-button">Assign</button></div>
+    </form>
+  </section>
+</div>
+
+<!-- PDF import modal (students, enrollment, attendance, grades) -->
+<div id="importModal" class="modal-backdrop hidden">
+  <section class="modal wide-modal" role="dialog" aria-modal="true" aria-labelledby="importTitle">
+    <div class="modal-heading">
+      <div><p class="eyebrow">BULK IMPORT</p><h2 id="importTitle">Import from PDF</h2><p class="muted" id="importHelp"></p></div>
+      <button id="closeImport" class="close-button" type="button" aria-label="Close">×</button>
+    </div>
+    <label class="hidden" id="importDateWrap">Date to use when a row has no date<input id="importDate" type="date"></label>
+    <label class="pdf-dropzone" for="importFile">
+      <strong>Choose a PDF file</strong>
+      <span class="muted">Text-based PDFs (exported from Word/Excel/Google Docs). CSV and TXT files also work. Scanned PDFs need OCR first.</span>
+      <input id="importFile" type="file" accept=".pdf,.csv,.txt,application/pdf,text/csv,text/plain">
+    </label>
+    <p id="importMessage" class="muted" aria-live="polite">Choose a file to start.</p>
+    <div id="importPreviewWrap" class="table-wrap pdf-preview hidden"><table><thead id="importHead"></thead><tbody id="importBody"></tbody></table></div>
+    <div class="modal-actions"><button id="cancelImport" class="secondary-button" type="button">Close</button><button id="saveImport" class="primary-button" type="button" disabled>Import records</button></div>
+  </section>
+</div>
+
+<div id="toast" class="toast" role="status"></div>
+</body>
+</html>

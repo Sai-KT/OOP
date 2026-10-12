@@ -1,0 +1,19 @@
+# Maven build target
+target/
+
+# Classpath file
+cp.txt
+
+# macOS system files
+.DS_Store
+
+# IDE and Editor files
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# Logs
+*.log
