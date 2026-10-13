@@ -17,3 +17,6 @@ cp.txt
 
 # Logs
 *.log
+
+# Database backups
+backup_*.sql
