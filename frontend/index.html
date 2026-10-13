@@ -21,6 +21,7 @@
     <button class="nav-item" data-page="attendance"><span class="nav-icon">◷</span><span class="nav-label">Attendance</span></button>
     <button class="nav-item" data-page="grades"><span class="nav-icon">◎</span><span class="nav-label">Grades &amp; GPA</span></button>
     <button class="nav-item" data-page="reports"><span class="nav-icon">▥</span><span class="nav-label">Reports</span></button>
+    <button class="nav-item" data-page="accounts"><span class="nav-icon">⚿</span><span class="nav-label">Student Accounts</span><span id="navAccountsCount">0</span></button>
   </nav>
   <div class="sidebar-help"><h3>CampusFlow</h3><p>Java + JDBC + MySQL student management system.</p><button id="helpButton" class="text-button" type="button">Help &amp; API status ↗</button></div>
 </aside>
@@ -33,6 +34,7 @@
       <input id="globalSearch" class="global-search" type="search" placeholder="Search students...">
       <span class="admin-avatar" id="userAvatar">A</span>
       <span class="admin-name" id="userName">Admin</span>
+      <span class="role-badge admin-badge" id="userRoleBadge">ADMIN</span>
       <button id="logoutButton" class="secondary-button logout-button" type="button">Log out</button>
     </div>
   </header>
@@ -225,6 +227,71 @@
       <article class="panel report-panel"><h2>Course catalog</h2><p>Code, name, credits, capacity, prerequisite and seats used.</p><button class="primary-button" id="reportCoursesButton" type="button">Download course CSV</button></article>
     </div>
   </section>
+
+  <!-- STUDENT ACCOUNTS (PHASE 6) -->
+  <section id="accountsPage" class="page hidden">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">USER ACCESS &amp; RBAC</p>
+        <h1>Student Accounts</h1>
+        <p class="subtitle">Review registered users, audit access links, and associate student login accounts with academic records.</p>
+      </div>
+      <div class="heading-actions">
+        <button class="primary-button" id="openLinkModalButton" type="button">＋ Link account</button>
+      </div>
+    </div>
+    <div class="stats-grid three">
+      <article class="stat-card">
+        <div class="stat-top">Total accounts <span>👤</span></div>
+        <div class="stat-number" id="totalAccountsCount">—</div>
+        <p class="stat-caption">Registered users</p>
+      </article>
+      <article class="stat-card">
+        <div class="stat-top">Linked students <span>✓</span></div>
+        <div class="stat-number" id="linkedAccountsCount">—</div>
+        <p class="stat-caption">Active academic links</p>
+      </article>
+      <article class="stat-card">
+        <div class="stat-top">Unlinked accounts <span>!</span></div>
+        <div class="stat-number" id="unlinkedAccountsCount">—</div>
+        <p class="stat-caption">Require administrator linking</p>
+      </article>
+    </div>
+    <article class="panel">
+      <div class="panel-heading">
+        <div>
+          <h2>Registered accounts directory</h2>
+          <p class="muted">Loaded from /api/admin/accounts</p>
+        </div>
+        <button class="secondary-button" id="refreshAccountsButton" type="button">↻ Refresh</button>
+      </div>
+      <div class="filter-bar">
+        <input id="accountsSearch" type="search" placeholder="Search name, username, email or student ID...">
+        <select id="accountsStatusFilter">
+          <option value="all">All statuses</option>
+          <option value="linked">Linked</option>
+          <option value="unlinked">Unlinked</option>
+          <option value="admin">Admins</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>USER</th>
+              <th>USER ID</th>
+              <th>ROLE</th>
+              <th>LINKED STUDENT</th>
+              <th>STATUS</th>
+              <th>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody id="accountsBody"></tbody>
+        </table>
+      </div>
+      <p id="accountsEmpty" class="empty-state hidden">No matching user accounts found.</p>
+    </article>
+  </section>
 </main>
 
 <!-- Add student modal -->
@@ -303,6 +370,39 @@
     <p id="importMessage" class="muted" aria-live="polite">Choose a file to start.</p>
     <div id="importPreviewWrap" class="table-wrap pdf-preview hidden"><table><thead id="importHead"></thead><tbody id="importBody"></tbody></table></div>
     <div class="modal-actions"><button id="cancelImport" class="secondary-button" type="button">Close</button><button id="saveImport" class="primary-button" type="button" disabled>Import records</button></div>
+  </section>
+</div>
+
+<!-- Link student account modal (PHASE 6) -->
+<div id="linkAccountModal" class="modal-backdrop hidden">
+  <section class="modal" role="dialog" aria-modal="true" aria-labelledby="linkAccountModalTitle">
+    <div class="modal-heading">
+      <div><p class="eyebrow">ACCOUNT LINKING</p><h2 id="linkAccountModalTitle">Link student account</h2></div>
+      <button id="closeLinkAccountModal" class="close-button" type="button" aria-label="Close">×</button>
+    </div>
+    <form id="linkAccountForm" class="stack-form">
+      <label>User account
+        <select id="linkTargetUser" required>
+          <option value="">Select student user account</option>
+        </select>
+      </label>
+      <label>Student record
+        <select id="linkTargetStudent" required>
+          <option value="">Select student record</option>
+        </select>
+      </label>
+      <div class="checkbox-verification">
+        <label class="checkbox-label">
+          <input type="checkbox" id="linkConfirmVerified" required>
+          <span>I confirm that I have verified this student's identity before approving account linkage.</span>
+        </label>
+      </div>
+      <p id="linkAccountError" class="form-error hidden" role="alert"></p>
+      <div class="modal-actions">
+        <button type="button" id="cancelLinkAccountModal" class="secondary-button">Cancel</button>
+        <button type="submit" class="primary-button" id="saveLinkButton">Approve link</button>
+      </div>
+    </form>
   </section>
 </div>
 

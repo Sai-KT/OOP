@@ -11,6 +11,7 @@ let enrollments = [];
 let grades = [];
 let attendance = [];
 let departments = [];
+let accounts = [];
 let currentUser = null;
 let toastTimer;
 
@@ -128,9 +129,20 @@ async function loadUser() {
     window.location.href = "/login.html";
     return false;
   }
+  if (!currentUser) {
+    window.location.href = "/login.html";
+    return false;
+  }
+  if (currentUser.role === "STUDENT") {
+    window.location.href = "/student.html";
+    return false;
+  }
   const name = currentUser.fullName || currentUser.username;
   $("userName").textContent = name;
   $("userAvatar").textContent = initials(name);
+  if ($("userRoleBadge")) {
+    $("userRoleBadge").textContent = currentUser.role || "ADMIN";
+  }
   const hour = new Date().getHours();
   const part = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   $("greeting").textContent = `${part}, ${name.split(" ")[0]} ✦`;
@@ -144,8 +156,8 @@ $("logoutButton").addEventListener("click", async () => {
 
 /* NAVIGATION */
 
-const PAGES = ["overview", "students", "departments", "courses", "enrollments", "attendance", "grades", "reports"];
-const PAGE_TITLES = { enrollments: "Enrollment", grades: "Grades & GPA", departments: "Departments" };
+const PAGES = ["overview", "students", "departments", "courses", "enrollments", "attendance", "grades", "reports", "accounts"];
+const PAGE_TITLES = { enrollments: "Enrollment", grades: "Grades & GPA", departments: "Departments", accounts: "Student Accounts" };
 
 function showPage(page) {
   PAGES.forEach(name => $(`${name}Page`).classList.toggle("hidden", name !== page));
@@ -166,7 +178,8 @@ $("menuButton").addEventListener("click", () => $("sidebar").classList.toggle("o
 async function loadData() {
   const endpoints = [
     ["students", "/students"], ["courses", "/courses"], ["enrollments", "/enrollments"],
-    ["grades", "/grades"], ["attendance", "/attendance"], ["departments", "/departments"]
+    ["grades", "/grades"], ["attendance", "/attendance"], ["departments", "/departments"],
+    ["accounts", "/admin/accounts"]
   ];
   const failures = [];
 
@@ -183,18 +196,19 @@ async function loadData() {
     if (key === "grades") grades = value;
     if (key === "attendance") attendance = value;
     if (key === "departments") departments = value;
+    if (key === "accounts") accounts = value;
   }
 
   renderAll();
   $("dashboardNote").textContent = failures.length
     ? `Some data could not load (${failures.join(", ")}). Is WebServer running and MySQL connected?`
-    : `${students.length} students, ${courses.length} courses, ${enrollments.length} enrollments, ${attendance.length} attendance entries and ${grades.length} grades loaded from MySQL.`;
+    : `${students.length} students, ${courses.length} courses, ${enrollments.length} enrollments, ${attendance.length} attendance entries, ${grades.length} grades and ${accounts.length} user accounts loaded from MySQL.`;
 }
 
 // Each section is drawn separately, so an error in one section never blanks the others.
 function renderAll() {
   [populateSelects, renderDashboard, renderStudents, renderDepartments, renderCourses,
-   renderEnrollments, renderAttendance, renderGrades].forEach(render => {
+   renderEnrollments, renderAttendance, renderGrades, renderAccounts].forEach(render => {
     try { render(); } catch (error) { console.error(`${render.name} failed:`, error); }
   });
 }
@@ -1003,9 +1017,194 @@ $("helpButton").addEventListener("click", async () => {
   }
 });
 
+/* STUDENT ACCOUNTS (PHASE 6) */
+
+async function loadAccounts() {
+  try {
+    const list = await api("/admin/accounts");
+    if (Array.isArray(list)) {
+      accounts = list;
+      renderAccounts();
+    }
+  } catch (error) {
+    console.warn("Could not reload accounts:", error.message);
+    toast("Could not reload accounts: " + error.message);
+  }
+}
+
+function renderAccounts() {
+  if (!$("accountsBody")) return;
+  const search = $("accountsSearch") ? $("accountsSearch").value.trim().toLowerCase() : "";
+  const filter = $("accountsStatusFilter") ? $("accountsStatusFilter").value : "all";
+
+  const total = accounts.length;
+  const linked = accounts.filter(a => a.role === "STUDENT" && a.studentId != null).length;
+  const unlinked = accounts.filter(a => a.role === "STUDENT" && a.studentId == null).length;
+
+  if ($("totalAccountsCount")) $("totalAccountsCount").textContent = total;
+  if ($("linkedAccountsCount")) $("linkedAccountsCount").textContent = linked;
+  if ($("unlinkedAccountsCount")) $("unlinkedAccountsCount").textContent = unlinked;
+  if ($("navAccountsCount")) $("navAccountsCount").textContent = unlinked;
+
+  const filtered = accounts.filter(acct => {
+    if (filter === "linked" && (acct.role !== "STUDENT" || acct.studentId == null)) return false;
+    if (filter === "unlinked" && (acct.role !== "STUDENT" || acct.studentId != null)) return false;
+    if (filter === "admin" && acct.role !== "ADMIN") return false;
+
+    if (!search) return true;
+    return (acct.fullName || "").toLowerCase().includes(search)
+      || (acct.username || "").toLowerCase().includes(search)
+      || (acct.email || "").toLowerCase().includes(search)
+      || (acct.studentName || "").toLowerCase().includes(search)
+      || String(acct.studentId || "").includes(search)
+      || String(acct.userId || "").includes(search);
+  });
+
+  $("accountsBody").innerHTML = filtered.map(acct => {
+    const isStudent = acct.role === "STUDENT";
+    const isLinked = isStudent && acct.studentId != null;
+
+    let linkedDisplay = `<span class="muted">— (System admin)</span>`;
+    let statusPillHtml = `<span class="status-pill" style="background:#ede8ff;color:#5d48e8;">Admin</span>`;
+    let actionsHtml = `<span class="muted" style="font-size:11px;">Protected</span>`;
+
+    if (isStudent) {
+      if (isLinked) {
+        linkedDisplay = `<strong>${esc(acct.studentName || "Student")}</strong> <span class="muted">(ID ${esc(acct.studentId)})</span>`;
+        statusPillHtml = `<span class="status-pill status-active">Linked</span>`;
+        actionsHtml = `
+          <button type="button" class="small-action" data-change-user="${esc(acct.userId)}" data-student-id="${esc(acct.studentId)}">Change</button>
+          <button type="button" class="small-action danger-action" data-unlink-user="${esc(acct.userId)}" data-username="${esc(acct.username)}" data-student-id="${esc(acct.studentId)}">Unlink</button>
+        `;
+      } else {
+        linkedDisplay = `<span class="muted" style="color:#d34d7b;font-weight:600;">Not linked</span>`;
+        statusPillHtml = `<span class="status-pill status-pending">Unlinked</span>`;
+        actionsHtml = `
+          <button type="button" class="small-action" data-link-user="${esc(acct.userId)}">Link student</button>
+        `;
+      }
+    }
+
+    const roleBadge = acct.role === "ADMIN"
+      ? `<span class="role-badge admin-badge">ADMIN</span>`
+      : `<span class="role-badge student-badge">STUDENT</span>`;
+
+    return `<tr>
+      <td>
+        <div class="student-cell">
+          <div class="student-avatar">${esc(initials(acct.fullName || acct.username))}</div>
+          <div class="student-name">
+            <strong>${esc(acct.fullName || acct.username)}</strong>
+            <span>${esc(acct.email)} · @${esc(acct.username)}</span>
+          </div>
+        </div>
+      </td>
+      <td><strong>#${esc(acct.userId)}</strong></td>
+      <td>${roleBadge}</td>
+      <td>${linkedDisplay}</td>
+      <td>${statusPillHtml}</td>
+      <td class="action-cell" style="white-space:nowrap">${actionsHtml}</td>
+    </tr>`;
+  }).join("");
+
+  $("accountsEmpty").classList.toggle("hidden", filtered.length > 0);
+
+  // Row button event listeners
+  $("accountsBody").querySelectorAll("[data-link-user]").forEach(btn =>
+    btn.addEventListener("click", () => openLinkModal(Number(btn.dataset.linkUser))));
+
+  $("accountsBody").querySelectorAll("[data-change-user]").forEach(btn =>
+    btn.addEventListener("click", () => openLinkModal(Number(btn.dataset.changeUser), Number(btn.dataset.studentId))));
+
+  $("accountsBody").querySelectorAll("[data-unlink-user]").forEach(btn =>
+    btn.addEventListener("click", async () => {
+      const uid = Number(btn.dataset.unlinkUser);
+      const uname = btn.dataset.username;
+      const sid = btn.dataset.studentId;
+      if (!confirm(`Are you sure you want to unlink student record ID ${sid} from user account '${uname}'?\n\nThe student will immediately lose access to personal academic records.`)) return;
+      try {
+        const res = await api("/admin/accounts/unlink", { userId: uid });
+        toast(res.message || "Account unlinked successfully.");
+        await loadAccounts();
+      } catch (err) {
+        toast("Failed to unlink account: " + err.message);
+      }
+    }));
+}
+
+function openLinkModal(userId = null, currentStudentId = null) {
+  $("linkAccountForm").reset();
+  setMessage("linkAccountError", "");
+
+  const studentUsers = accounts.filter(a => a.role === "STUDENT");
+  $("linkTargetUser").innerHTML = `<option value="">Select student user account</option>` +
+    studentUsers.map(u => {
+      const statusText = u.studentId ? `(Linked: ID ${u.studentId})` : `(Unlinked)`;
+      return `<option value="${u.userId}">${esc(u.fullName || u.username)} (@${esc(u.username)}) ${statusText}</option>`;
+    }).join("");
+
+  if (userId) {
+    $("linkTargetUser").value = String(userId);
+  }
+
+  const linkedStudentIds = new Set(
+    accounts.filter(a => a.studentId != null && Number(a.userId) !== Number(userId)).map(a => Number(a.studentId))
+  );
+
+  $("linkTargetStudent").innerHTML = `<option value="">Select student record</option>` +
+    students.map(s => {
+      const isTaken = linkedStudentIds.has(Number(s.studentId));
+      const takenNote = isTaken ? " (Already linked to another user)" : "";
+      return `<option value="${s.studentId}" ${isTaken ? "disabled" : ""}>ID ${s.studentId} · ${esc(s.studentName)} (${esc(s.email)})${takenNote}</option>`;
+    }).join("");
+
+  if (currentStudentId) {
+    $("linkTargetStudent").value = String(currentStudentId);
+    $("linkAccountModalTitle").textContent = "Change student link";
+    $("saveLinkButton").textContent = "Update link";
+  } else {
+    $("linkAccountModalTitle").textContent = "Link student account";
+    $("saveLinkButton").textContent = "Approve link";
+  }
+
+  openModal("linkAccountModal");
+}
+
+$("openLinkModalButton").addEventListener("click", () => openLinkModal());
+$("closeLinkAccountModal").addEventListener("click", () => closeModal("linkAccountModal"));
+$("cancelLinkAccountModal").addEventListener("click", () => closeModal("linkAccountModal"));
+$("refreshAccountsButton").addEventListener("click", loadAccounts);
+$("accountsSearch").addEventListener("input", renderAccounts);
+$("accountsStatusFilter").addEventListener("change", renderAccounts);
+
+$("linkAccountForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  const userId = $("linkTargetUser").value;
+  const studentId = $("linkTargetStudent").value;
+  const verified = $("linkConfirmVerified").checked;
+
+  if (!userId || !studentId) {
+    setMessage("linkAccountError", "Please select both a user account and a student record.", true);
+    return;
+  }
+  if (!verified) {
+    setMessage("linkAccountError", "Administrator must confirm student identity verification.", true);
+    return;
+  }
+
+  try {
+    const res = await api("/admin/accounts/link", { userId, studentId });
+    closeModal("linkAccountModal");
+    toast(res.message || "Account successfully linked.");
+    await loadAccounts();
+  } catch (error) {
+    setMessage("linkAccountError", error.message, true);
+  }
+});
+
 /* CLOSE MODALS */
 
-const MODALS = ["studentModal", "enrollmentModal", "importModal", "departmentModal", "assignModal"];
+const MODALS = ["studentModal", "enrollmentModal", "importModal", "departmentModal", "assignModal", "linkAccountModal"];
 MODALS.forEach(id =>
   $(id).addEventListener("click", event => { if (event.target === $(id)) closeModal(id); }));
 document.addEventListener("keydown", event => {
