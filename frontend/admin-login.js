@@ -10,14 +10,21 @@ function showMessage(text, success = false, isStudentAttempt = false) {
     node.classList.add("hidden");
     return;
   }
+  const icon = success 
+    ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:2px;"><polyline points="20 6 9 17 4 12"/></svg>`
+    : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:2px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+
   if (isStudentAttempt) {
-    node.innerHTML = `<div><strong>Access Denied: Student Account Detected</strong></div>`
-      + `<div style="margin-top:4px;">${text}</div>`
-      + `<div style="margin-top:8px;"><a href="/student-login.html" style="color:#7057e8;font-weight:750;text-decoration:underline;">Click here to sign in via the Student Portal →</a></div>`;
+    node.innerHTML = `${icon}<div>`
+      + `<div style="font-weight:700;">Access Denied &middot; Student Account</div>`
+      + `<div style="margin-top:3px;font-size:12px;">${text}</div>`
+      + `<div style="margin-top:8px;"><a href="/student-login.html" style="color:#818cf8;font-weight:700;text-decoration:underline;">Click here to sign in via the Student Portal &rarr;</a></div>`
+      + `</div>`;
   } else {
-    node.textContent = text;
+    node.innerHTML = `${icon}<div>${text}</div>`;
   }
   node.classList.toggle("success", success);
+  node.classList.toggle("error", !success);
   node.classList.remove("hidden");
 }
 

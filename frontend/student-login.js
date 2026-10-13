@@ -1,8 +1,8 @@
 "use strict";
 
-// CampusFlow Dedicated Student Portal Login Controller
+// CampusFlow Dedicated Student Portal Login & Registration Controller
 const $ = id => document.getElementById(id);
-let signupMode = false;
+let isSignupMode = false;
 
 function showMessage(id, text, success = false, isAdminAttempt = false) {
   const node = $(id);
@@ -11,45 +11,64 @@ function showMessage(id, text, success = false, isAdminAttempt = false) {
     node.classList.add("hidden");
     return;
   }
+
+  const icon = success 
+    ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:2px;"><polyline points="20 6 9 17 4 12"/></svg>`
+    : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:2px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+
   if (isAdminAttempt) {
-    node.innerHTML = `<div><strong>Administrator Account Detected</strong></div>`
-      + `<div style="margin-top:4px;">${text}</div>`
-      + `<div style="margin-top:8px;"><a href="/admin-login.html" style="color:#0070f3;font-weight:750;text-decoration:underline;">Click here to sign in via the Admin Console →</a></div>`;
+    node.innerHTML = `${icon}<div>`
+      + `<div style="font-weight:700;">Administrator Account Detected</div>`
+      + `<div style="margin-top:3px;font-size:12px;">${text}</div>`
+      + `<div style="margin-top:8px;"><a href="/admin-login.html" style="color:#0284c7;font-weight:700;text-decoration:underline;">Click here to sign in via the Admin Console &rarr;</a></div>`
+      + `</div>`;
   } else {
-    node.textContent = text;
+    node.innerHTML = `${icon}<div>${text}</div>`;
   }
+
   node.classList.toggle("success", success);
+  node.classList.toggle("error", !success);
   node.classList.remove("hidden");
 }
 
 function setBusy(button, busy, label) {
   button.disabled = busy;
-  button.querySelector("span").textContent = label;
+  const span = button.querySelector("span");
+  if (span) span.textContent = label;
 }
 
-// Toggle between Sign In and Sign Up
+// Toggle between Sign In and Sign Up tabs
 function setMode(signup) {
-  signupMode = signup;
+  isSignupMode = signup;
+  
+  // Segmented tab active styles
+  $("tabSignIn").classList.toggle("active", !signup);
+  $("tabRegister").classList.toggle("active", signup);
+
+  // Form visibility
   $("studentLoginForm").classList.toggle("hidden", signup);
   $("studentSignupForm").classList.toggle("hidden", !signup);
-  $("studentAuthKicker").textContent = signup ? "NEW STUDENT REGISTRATION" : "STUDENT SIGN IN";
-  $("studentAuthTitle").textContent = signup ? "Register Student Account" : "Student Portal";
-  $("studentAuthSubtitle").textContent = signup
-    ? "Create your student login account. Your campus student record will be linked by an administrator."
-    : "Enter your student account details to access your academic dashboard.";
-  $("studentAuthSwitchText").firstChild.textContent = signup ? "Already have an account? " : "New student? ";
-  $("switchStudentAuth").textContent = signup ? "Sign in" : "Create an account";
+
+  // Headers
+  $("studentKicker").textContent = signup ? "New Student Registration" : "Student Access";
+  $("studentTitle").textContent = signup ? "Create Account" : "Student Portal";
+  $("studentSubtitle").textContent = signup
+    ? "Create your student login account. Your academic record will be linked by an administrator."
+    : "Sign in to view your courses, verified attendance, published grades, and calculated GPA.";
+
   showMessage("studentLoginMessage", "");
   showMessage("studentSignupMessage", "");
   (signup ? $("studentSignupFullName") : $("studentLoginUsername")).focus();
 }
 
-$("switchStudentAuth").addEventListener("click", () => setMode(!signupMode));
+$("tabSignIn").addEventListener("click", () => setMode(false));
+$("tabRegister").addEventListener("click", () => setMode(true));
 
-// Password toggles (eye icons)
+// Password visibility toggles
 document.querySelectorAll("[data-toggle-password]").forEach(button => {
   button.addEventListener("click", () => {
     const input = $(button.dataset.togglePassword);
+    if (!input) return;
     const show = input.type === "password";
     input.type = show ? "text" : "password";
     button.classList.toggle("showing", show);
@@ -59,7 +78,7 @@ document.querySelectorAll("[data-toggle-password]").forEach(button => {
   });
 });
 
-// Caps Lock watcher
+// Caps Lock detection on login password
 (function setupCapsLock() {
   const check = event => {
     if (event.getModifierState) $("studentLoginCaps").classList.toggle("hidden", !event.getModifierState("CapsLock"));
@@ -70,7 +89,7 @@ document.querySelectorAll("[data-toggle-password]").forEach(button => {
   pw.addEventListener("blur", () => $("studentLoginCaps").classList.add("hidden"));
 })();
 
-// Password strength meter
+// Password strength calculation
 function passwordScore(password) {
   if (!password) return 0;
   let score = 0;
@@ -84,21 +103,30 @@ function passwordScore(password) {
 function updateStrength() {
   const password = $("studentSignupPassword").value;
   const score = passwordScore(password);
-  const labels = ["Use at least 8 characters — mix upper & lower case, numbers and symbols.",
-    "Weak password", "Fair password", "Good password", "Strong password"];
+  const labels = [
+    "Min 8 characters with upper, lower, numbers & symbols.",
+    "Weak password",
+    "Fair password",
+    "Good password",
+    "Strong password"
+  ];
   $("studentStrengthMeter").dataset.score = score;
   $("studentStrengthText").textContent = password ? `${labels[score]}${password.length < 8 ? " — needs at least 8 characters" : ""}` : labels[0];
-  $("studentStrengthText").className = "auth-field-hint" + (password ? (score >= 3 ? " hint-ok" : score <= 1 ? " hint-bad" : "") : "");
+  $("studentStrengthText").className = "field-hint" + (password ? (score >= 3 ? " ok" : score <= 1 ? " error" : "") : "");
   updateMatch();
 }
 
 function updateMatch() {
   const confirm = $("studentSignupConfirm").value;
   const node = $("studentMatchText");
-  if (!confirm) { node.textContent = ""; node.className = "auth-field-hint"; return; }
+  if (!confirm) {
+    node.textContent = "";
+    node.className = "field-hint";
+    return;
+  }
   const same = confirm === $("studentSignupPassword").value;
   node.textContent = same ? "✓ Passwords match" : "✗ Passwords do not match";
-  node.className = "auth-field-hint " + (same ? "hint-ok" : "hint-bad");
+  node.className = "field-hint " + (same ? "ok" : "error");
 }
 
 $("studentSignupPassword").addEventListener("input", updateStrength);
@@ -161,7 +189,7 @@ $("studentSignupForm").addEventListener("submit", async event => {
   if (password.length < 8) return showMessage("studentSignupMessage", "Password must be at least 8 characters.");
   if (password !== confirm) return showMessage("studentSignupMessage", "Passwords do not match.");
 
-  setBusy($("studentSignupSubmit"), true, "Registering student account...");
+  setBusy($("studentSignupSubmit"), true, "Creating account...");
   try {
     const response = await fetch("/api/auth/signup", {
       method: "POST",
@@ -181,7 +209,7 @@ $("studentSignupForm").addEventListener("submit", async event => {
   } catch (error) {
     showMessage("studentSignupMessage", error.message);
   } finally {
-    setBusy($("studentSignupSubmit"), false, "Create Student Account");
+    setBusy($("studentSignupSubmit"), false, "Complete Registration");
   }
 });
 
@@ -199,5 +227,3 @@ $("studentSignupForm").addEventListener("submit", async event => {
     }
   } catch {}
 })();
-
-if (window.location.hash === "#signup") setMode(true);
