@@ -226,3 +226,136 @@ $("studentSignupForm").addEventListener("submit", async event => {
     }
   } catch {}
 })();
+
+// ================================================================
+// DYNAMIC LUMINOUS FLOATING BUBBLES & CARD TILT ENGINE
+// ================================================================
+(function initStudentDynamicMotion() {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  const canvas = $("studentParticles");
+  const card = document.querySelector(".student-card");
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+  let width = 0, height = 0, dpr = 1;
+  let particles = [];
+  let mouse = { x: -1000, y: -1000, active: false };
+  let animId = null;
+
+  const colors = [
+    "rgba(56, 189, 248, ",   // sky
+    "rgba(99, 102, 241, ",   // indigo
+    "rgba(52, 211, 153, ",   // emerald
+    "rgba(168, 85, 247, "    // purple
+  ];
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    canvas.style.width = width + "px";
+    canvas.style.height = height + "px";
+    ctx.scale(dpr, dpr);
+    createParticles();
+  }
+
+  function createParticles() {
+    const count = Math.min(Math.floor((width * height) / 22000), 45);
+    particles = [];
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        radius: Math.random() * 3 + 1.5,
+        speedY: Math.random() * 0.5 + 0.3,
+        swaySpeed: Math.random() * 0.02 + 0.01,
+        swayAmp: Math.random() * 1.2 + 0.6,
+        angle: Math.random() * Math.PI * 2,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        alpha: Math.random() * 0.35 + 0.2
+      });
+    }
+  }
+
+  function updateAndDraw() {
+    ctx.clearRect(0, 0, width, height);
+
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+
+      p.angle += p.swaySpeed;
+      p.x += Math.sin(p.angle) * p.swayAmp * 0.4;
+      p.y -= p.speedY;
+
+      // Soft mouse repulsion
+      if (mouse.active) {
+        const dx = p.x - mouse.x;
+        const dy = p.y - mouse.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < 110 && dist > 0) {
+          const force = (110 - dist) / 110 * 0.9;
+          p.x += (dx / dist) * force;
+          p.y += (dy / dist) * force;
+        }
+      }
+
+      // Wrap around top/bottom and edges
+      if (p.y + p.radius < 0) {
+        p.y = height + p.radius;
+        p.x = Math.random() * width;
+      }
+      if (p.x < -10) p.x = width + 10;
+      if (p.x > width + 10) p.x = -10;
+
+      // Draw glowing buoyant bubble
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+      ctx.fillStyle = p.color + p.alpha + ")";
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = p.color + "0.5)";
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+
+    animId = requestAnimationFrame(updateAndDraw);
+  }
+
+  window.addEventListener("resize", () => {
+    resize();
+  });
+
+  window.addEventListener("mousemove", e => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+    mouse.active = true;
+
+    // Subtle 3D Card Parallax Tilt
+    if (card) {
+      const cx = width / 2;
+      const cy = height / 2;
+      const tiltX = ((e.clientY - cy) / cy) * -4;
+      const tiltY = ((e.clientX - cx) / cx) * 4;
+      card.style.transform = `perspective(1000px) rotateX(${tiltX.toFixed(2)}deg) rotateY(${tiltY.toFixed(2)}deg)`;
+    }
+  });
+
+  window.addEventListener("mouseleave", () => {
+    mouse.active = false;
+    if (card) card.style.transform = "";
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      if (animId) cancelAnimationFrame(animId);
+    } else {
+      animId = requestAnimationFrame(updateAndDraw);
+    }
+  });
+
+  resize();
+  animId = requestAnimationFrame(updateAndDraw);
+})();
+

@@ -114,3 +114,152 @@ $("adminLoginForm").addEventListener("submit", async event => {
     }
   } catch {}
 })();
+
+// ================================================================
+// DYNAMIC CYBER CONSTELLATION & CARD TILT ENGINE
+// ================================================================
+(function initAdminDynamicMotion() {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  const canvas = $("adminParticles");
+  const card = document.querySelector(".admin-card");
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+  let width = 0, height = 0, dpr = 1;
+  let particles = [];
+  let mouse = { x: -1000, y: -1000, active: false };
+  let animId = null;
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    canvas.style.width = width + "px";
+    canvas.style.height = height + "px";
+    ctx.scale(dpr, dpr);
+    createParticles();
+  }
+
+  function createParticles() {
+    const count = Math.min(Math.floor((width * height) / 18000), 55);
+    particles = [];
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.7,
+        vy: (Math.random() - 0.5) * 0.7,
+        radius: Math.random() * 1.8 + 1,
+        color: Math.random() > 0.4 ? "rgba(129, 140, 248, " : "rgba(52, 211, 153, ",
+        alpha: Math.random() * 0.5 + 0.3
+      });
+    }
+  }
+
+  function updateAndDraw() {
+    ctx.clearRect(0, 0, width, height);
+
+    // Update positions & draw particles
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+
+      // Subtle mouse interaction
+      if (mouse.active) {
+        const dx = p.x - mouse.x;
+        const dy = p.y - mouse.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < 130 && dist > 0) {
+          const force = (130 - dist) / 130 * 0.8;
+          p.x += (dx / dist) * force;
+          p.y += (dy / dist) * force;
+        }
+      }
+
+      p.x += p.vx;
+      p.y += p.vy;
+
+      if (p.x < 0) { p.x = 0; p.vx *= -1; }
+      else if (p.x > width) { p.x = width; p.vx *= -1; }
+      if (p.y < 0) { p.y = 0; p.vy *= -1; }
+      else if (p.y > height) { p.y = height; p.vy *= -1; }
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+      ctx.fillStyle = p.color + p.alpha + ")";
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = p.color + "0.6)";
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Draw connection lines between close particles
+      for (let j = i + 1; j < particles.length; j++) {
+        const p2 = particles[j];
+        const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+        if (dist < 110) {
+          const lineAlpha = (1 - dist / 110) * 0.22;
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.strokeStyle = `rgba(129, 140, 248, ${lineAlpha})`;
+          ctx.lineWidth = 0.8;
+          ctx.stroke();
+        }
+      }
+
+      // Draw line to cursor if close
+      if (mouse.active) {
+        const mDist = Math.hypot(p.x - mouse.x, p.y - mouse.y);
+        if (mDist < 120) {
+          const mAlpha = (1 - mDist / 120) * 0.35;
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(mouse.x, mouse.y);
+          ctx.strokeStyle = `rgba(99, 102, 241, ${mAlpha})`;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+      }
+    }
+
+    animId = requestAnimationFrame(updateAndDraw);
+  }
+
+  window.addEventListener("resize", () => {
+    resize();
+  });
+
+  window.addEventListener("mousemove", e => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+    mouse.active = true;
+
+    // Subtle 3D Card Parallax Tilt
+    if (card) {
+      const cx = width / 2;
+      const cy = height / 2;
+      const tiltX = ((e.clientY - cy) / cy) * -4;
+      const tiltY = ((e.clientX - cx) / cx) * 4;
+      card.style.transform = `perspective(1000px) rotateX(${tiltX.toFixed(2)}deg) rotateY(${tiltY.toFixed(2)}deg)`;
+    }
+  });
+
+  window.addEventListener("mouseleave", () => {
+    mouse.active = false;
+    if (card) card.style.transform = "";
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      if (animId) cancelAnimationFrame(animId);
+    } else {
+      animId = requestAnimationFrame(updateAndDraw);
+    }
+  });
+
+  resize();
+  animId = requestAnimationFrame(updateAndDraw);
+})();
+

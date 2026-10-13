@@ -58,9 +58,37 @@ html, body {
 .orb {
   position: absolute;
   border-radius: 50%;
-  filter: blur(85px);
+  filter: blur(60px);
   will-change: transform;
   pointer-events: none;
+}
+
+/* Particle Canvas Layer */
+.particle-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* ================================================================
+   CARD ENTRANCE ANIMATION
+   ================================================================ */
+
+@keyframes cardReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(28px) scale(0.97);
+    filter: blur(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.admin-card, .student-card {
+  animation: cardReveal 0.8s var(--ease-spring) both;
 }
 
 /* ================================================================
@@ -94,47 +122,69 @@ body.admin-body {
 
 /* Admin Luminous Orbs */
 .orb-admin-1 {
-  width: 580px;
-  height: 580px;
-  top: -140px;
-  left: 20%;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.32) 0%, rgba(79, 70, 229, 0.12) 50%, transparent 70%);
-  animation: floatAdmin1 18s ease-in-out infinite alternate;
+  width: 500px;
+  height: 500px;
+  top: -100px;
+  left: 15%;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.45) 0%, rgba(79, 70, 229, 0.18) 50%, transparent 70%);
+  animation: floatAdmin1 10s ease-in-out infinite alternate;
 }
 
 .orb-admin-2 {
-  width: 520px;
-  height: 520px;
-  bottom: -120px;
-  right: 15%;
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.22) 0%, rgba(6, 182, 212, 0.1) 50%, transparent 70%);
-  animation: floatAdmin2 24s ease-in-out infinite alternate;
+  width: 450px;
+  height: 450px;
+  bottom: -80px;
+  right: 10%;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.35) 0%, rgba(6, 182, 212, 0.15) 50%, transparent 70%);
+  animation: floatAdmin2 14s ease-in-out infinite alternate;
 }
 
 .orb-admin-3 {
-  width: 400px;
-  height: 400px;
-  top: 40%;
-  left: -100px;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.22) 0%, transparent 65%);
-  animation: floatAdmin3 28s ease-in-out infinite alternate;
+  width: 380px;
+  height: 380px;
+  top: 35%;
+  left: -80px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.35) 0%, transparent 65%);
+  animation: floatAdmin3 12s ease-in-out infinite alternate;
 }
 
 @keyframes floatAdmin1 {
   0% { transform: translate3d(0, 0, 0) scale(1); }
-  50% { transform: translate3d(70px, 45px, 0) scale(1.09); }
-  100% { transform: translate3d(-50px, 90px, 0) scale(0.94); }
+  33% { transform: translate3d(80px, 50px, 0) scale(1.12); }
+  66% { transform: translate3d(-40px, 90px, 0) scale(0.95); }
+  100% { transform: translate3d(30px, 30px, 0) scale(1.06); }
 }
 
 @keyframes floatAdmin2 {
   0% { transform: translate3d(0, 0, 0) scale(1); }
-  50% { transform: translate3d(-80px, -60px, 0) scale(1.12); }
-  100% { transform: translate3d(60px, -35px, 0) scale(0.92); }
+  33% { transform: translate3d(-90px, -50px, 0) scale(1.15); }
+  66% { transform: translate3d(50px, -30px, 0) scale(0.9); }
+  100% { transform: translate3d(-30px, -60px, 0) scale(1.08); }
 }
 
 @keyframes floatAdmin3 {
-  0% { transform: translate3d(0, 0, 0); }
-  100% { transform: translate3d(90px, -70px, 0); }
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(100px, -60px, 0) scale(1.1); }
+  100% { transform: translate3d(40px, -90px, 0) scale(0.95); }
+}
+
+/* Horizontal cyber scan beam for admin */
+.admin-body .scan-beam {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(99, 102, 241, 0.5) 30%, rgba(139, 92, 246, 0.8) 50%, rgba(99, 102, 241, 0.5) 70%, transparent 100%);
+  box-shadow: 0 0 20px 3px rgba(99, 102, 241, 0.4);
+  animation: scanDown 6s linear infinite;
+  opacity: 0.7;
+}
+
+@keyframes scanDown {
+  0% { top: -2px; opacity: 0; }
+  5% { opacity: 0.7; }
+  95% { opacity: 0.7; }
+  100% { top: 100%; opacity: 0; }
 }
 
 /* Admin Glassmorphic Card */
@@ -144,7 +194,6 @@ body.admin-body {
   width: 100%;
   max-width: 415px;
   background: rgba(13, 18, 30, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
   padding: 38px 34px;
   box-shadow: 
@@ -156,18 +205,42 @@ body.admin-body {
   transition: transform 0.3s var(--ease-spring), box-shadow 0.3s var(--ease-spring);
 }
 
-/* Subtle Specular Top Highlight Rim on Admin Card */
+/* Rotating gradient border (animated conic border) */
 .admin-card::before {
   content: "";
   position: absolute;
-  inset: 0;
-  border-radius: 20px;
-  padding: 1px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.04) 40%, transparent 100%);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
+  inset: -1px;
+  border-radius: 21px;
+  background: conic-gradient(
+    from var(--border-angle, 0deg),
+    transparent 25%,
+    rgba(99, 102, 241, 0.6) 35%,
+    rgba(139, 92, 246, 0.5) 50%,
+    rgba(16, 185, 129, 0.4) 65%,
+    transparent 75%
+  );
+  animation: rotateBorder 5s linear infinite;
+  z-index: -1;
+  opacity: 0.7;
+}
+
+.admin-card::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: 19px;
+  background: rgba(13, 18, 30, 0.93);
+  z-index: -1;
+}
+
+@property --border-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes rotateBorder {
+  to { --border-angle: 360deg; }
 }
 
 .admin-header {
@@ -434,47 +507,50 @@ body.student-body {
 
 /* Student Luminous Orbs */
 .orb-student-1 {
-  width: 620px;
-  height: 620px;
-  top: -150px;
-  left: 10%;
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.3) 0%, rgba(37, 99, 235, 0.14) 50%, transparent 70%);
-  animation: floatStudent1 20s ease-in-out infinite alternate;
+  width: 520px;
+  height: 520px;
+  top: -110px;
+  left: 8%;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.42) 0%, rgba(37, 99, 235, 0.2) 50%, transparent 70%);
+  animation: floatStudent1 11s ease-in-out infinite alternate;
 }
 
 .orb-student-2 {
-  width: 560px;
-  height: 560px;
-  bottom: -130px;
-  right: 8%;
-  background: radial-gradient(circle, rgba(129, 140, 248, 0.28) 0%, rgba(99, 102, 241, 0.12) 50%, transparent 70%);
-  animation: floatStudent2 24s ease-in-out infinite alternate;
+  width: 480px;
+  height: 480px;
+  bottom: -100px;
+  right: 5%;
+  background: radial-gradient(circle, rgba(129, 140, 248, 0.38) 0%, rgba(99, 102, 241, 0.16) 50%, transparent 70%);
+  animation: floatStudent2 14s ease-in-out infinite alternate;
 }
 
 .orb-student-3 {
-  width: 440px;
-  height: 440px;
-  top: 35%;
-  right: -90px;
-  background: radial-gradient(circle, rgba(52, 211, 153, 0.18) 0%, transparent 65%);
-  animation: floatStudent3 22s ease-in-out infinite alternate;
+  width: 400px;
+  height: 400px;
+  top: 30%;
+  right: -70px;
+  background: radial-gradient(circle, rgba(52, 211, 153, 0.3) 0%, transparent 65%);
+  animation: floatStudent3 12s ease-in-out infinite alternate;
 }
 
 @keyframes floatStudent1 {
   0% { transform: translate3d(0, 0, 0) scale(1); }
-  50% { transform: translate3d(60px, 65px, 0) scale(1.1); }
-  100% { transform: translate3d(-35px, 35px, 0) scale(0.95); }
+  33% { transform: translate3d(70px, 60px, 0) scale(1.14); }
+  66% { transform: translate3d(-30px, 40px, 0) scale(0.93); }
+  100% { transform: translate3d(45px, 20px, 0) scale(1.07); }
 }
 
 @keyframes floatStudent2 {
   0% { transform: translate3d(0, 0, 0) scale(1); }
-  50% { transform: translate3d(-65px, -45px, 0) scale(1.09); }
-  100% { transform: translate3d(45px, -65px, 0) scale(0.93); }
+  33% { transform: translate3d(-75px, -40px, 0) scale(1.12); }
+  66% { transform: translate3d(40px, -55px, 0) scale(0.92); }
+  100% { transform: translate3d(-20px, -70px, 0) scale(1.06); }
 }
 
 @keyframes floatStudent3 {
-  0% { transform: translate3d(0, 0, 0); }
-  100% { transform: translate3d(-55px, 75px, 0); }
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-65px, 80px, 0) scale(1.1); }
+  100% { transform: translate3d(-30px, 50px, 0) scale(0.96); }
 }
 
 /* Student Pearlescent Card */
@@ -483,18 +559,55 @@ body.student-body {
   z-index: 1;
   width: 100%;
   max-width: 435px;
-  background: rgba(255, 255, 255, 0.88);
-  border: 1px solid rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.9);
   border-radius: 22px;
   padding: 38px 34px;
   box-shadow: 
     0 25px 55px -12px rgba(15, 23, 42, 0.08),
     0 1px 3px rgba(0, 0, 0, 0.03),
     0 0 0 1px rgba(226, 232, 240, 0.7),
-    0 0 70px -15px rgba(37, 99, 235, 0.14);
+    0 0 70px -15px rgba(37, 99, 235, 0.16);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   transition: transform 0.3s var(--ease-spring), box-shadow 0.3s var(--ease-spring);
+}
+
+/* Rotating pearlescent gradient border for Student */
+.student-card::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: 23px;
+  background: conic-gradient(
+    from var(--border-angle-student, 0deg),
+    transparent 28%,
+    rgba(56, 189, 248, 0.6) 42%,
+    rgba(99, 102, 241, 0.45) 55%,
+    rgba(52, 211, 153, 0.45) 68%,
+    transparent 82%
+  );
+  animation: rotateBorderStudent 6.5s linear infinite;
+  z-index: -1;
+  opacity: 0.65;
+}
+
+.student-card::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: 21px;
+  background: rgba(255, 255, 255, 0.95);
+  z-index: -1;
+}
+
+@property --border-angle-student {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes rotateBorderStudent {
+  to { --border-angle-student: 360deg; }
 }
 
 .student-header {
@@ -819,12 +932,51 @@ body.student-body {
   color: #15803d;
 }
 
+/* Shimmer sweep on submit buttons */
+.admin-card .btn-submit::after,
+.student-card .btn-submit::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.22) 42%,
+    rgba(255, 255, 255, 0.12) 48%,
+    transparent 55%
+  );
+  border-radius: inherit;
+  animation: shimmer 3.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% { transform: translateX(-120%); }
+  50% { transform: translateX(120%); }
+}
+
+.admin-card .btn-submit,
+.student-card .btn-submit {
+  position: relative;
+  overflow: hidden;
+}
+
 /* Respect user accessibility settings */
 @media (prefers-reduced-motion: reduce) {
-  .orb {
+  .orb, .scan-beam {
     animation: none !important;
   }
   .admin-badge-dot {
+    animation: none !important;
+  }
+  .admin-card::before,
+  .student-card::before {
+    animation: none !important;
+  }
+  .admin-card .btn-submit::after,
+  .student-card .btn-submit::after {
+    animation: none !important;
+  }
+  .admin-card, .student-card {
     animation: none !important;
   }
 }
