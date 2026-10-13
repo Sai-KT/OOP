@@ -77,6 +77,11 @@ public class WebServer {
         server.createContext("/api/gpa", adminOnly(WebServer::gpa));
         server.createContext("/api/attendance", adminOnly(WebServer::attendance));
 
+        // ---------------- ADMIN ACCOUNT MANAGEMENT (PHASE 5) ----------------
+        server.createContext("/api/admin/accounts", adminOnly(WebServer::adminAccounts));
+        server.createContext("/api/admin/accounts/link", adminOnly(WebServer::adminLinkAccount));
+        server.createContext("/api/admin/accounts/unlink", adminOnly(WebServer::adminUnlinkAccount));
+
         // ---------------- STUDENT ONLY ENDPOINTS (PHASE 4) ----------------
         server.createContext("/api/student/me", studentOnly(WebServer::studentMe));
         server.createContext("/api/student/courses", studentOnly(WebServer::studentCourses));
@@ -574,6 +579,237 @@ public class WebServer {
         }
     }
 
+    // ===================== ADMIN ACCOUNT MANAGEMENT HANDLERS (PHASE 5) =====================
+
+    // GET /api/admin/accounts (ADMIN ONLY)
+    private static void adminAccounts(HttpExchange ex) throws IOException {
+        if (!"GET".equals(ex.getRequestMethod())) {
+            sendError(ex, 405, "Method not allowed. Supported method: GET.");
+            return;
+        }
+        String sql = "SELECT u.user_id, u.full_name, u.username, u.email, u.role, u.student_id, s.student_name "
+                + "FROM users u "
+                + "LEFT JOIN students s ON u.student_id = s.student_id "
+                + "ORDER BY u.user_id ASC";
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            List<String> accounts = new ArrayList<>();
+            while (rs.next()) {
+                int sid = rs.getInt("student_id");
+                Integer studentId = rs.wasNull() ? null : sid;
+                String studentName = rs.getString("student_name");
+                accounts.add(json(
+                        "userId", rs.getInt("user_id"),
+                        "fullName", rs.getString("full_name"),
+                        "username", rs.getString("username"),
+                        "email", rs.getString("email"),
+                        "role", rs.getString("role"),
+                        "studentId", studentId,
+                        "studentName", studentName
+                ));
+            }
+            send(ex, 200, array(accounts));
+        } catch (SQLException e) {
+            System.err.println("Admin accounts list SQL error: " + e.getMessage());
+            sendError(ex, 500, "Internal server error. Please try again later.");
+        }
+    }
+
+    // POST /api/admin/accounts/link (ADMIN ONLY)
+    // Parameters: userId, studentId
+    private static void adminLinkAccount(HttpExchange ex) throws IOException {
+        if (!"POST".equals(ex.getRequestMethod())) {
+            sendError(ex, 405, "Method not allowed. Supported method: POST.");
+            return;
+        }
+        Map<String, String> params = readForm(ex);
+        int userId;
+        int studentId;
+        try {
+            userId = Integer.parseInt(params.getOrDefault("userId", "").trim());
+            studentId = Integer.parseInt(params.getOrDefault("studentId", "").trim());
+            if (userId <= 0 || studentId <= 0) {
+                sendError(ex, 400, "userId and studentId must be positive integers.");
+                return;
+            }
+        } catch (NumberFormatException e) {
+            sendError(ex, 400, "Valid userId and studentId are required.");
+            return;
+        }
+
+        try (Connection con = DBConnection.getConnection()) {
+            con.setAutoCommit(false);
+            try {
+                // 1. Verify target user exists and is a STUDENT
+                String targetUsername;
+                Role targetRole;
+                try (PreparedStatement ps = con.prepareStatement(
+                        "SELECT username, role FROM users WHERE user_id = ? FOR UPDATE")) {
+                    ps.setInt(1, userId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (!rs.next()) {
+                            con.rollback();
+                            sendError(ex, 404, "User account not found (userId: " + userId + ").");
+                            return;
+                        }
+                        targetUsername = rs.getString("username");
+                        targetRole = Role.fromString(rs.getString("role"));
+                    }
+                }
+
+                if (targetRole != Role.STUDENT) {
+                    con.rollback();
+                    sendError(ex, 400, "Only STUDENT accounts can be linked to student records. Target user has role " + targetRole + ".");
+                    return;
+                }
+
+                // 2. Verify target student exists in students table
+                String studentName;
+                try (PreparedStatement ps = con.prepareStatement(
+                        "SELECT student_name FROM students WHERE student_id = ?")) {
+                    ps.setInt(1, studentId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (!rs.next()) {
+                            con.rollback();
+                            sendError(ex, 404, "Student record not found (studentId: " + studentId + ").");
+                            return;
+                        }
+                        studentName = rs.getString("student_name");
+                    }
+                }
+
+                // 3. Verify student is not already linked to another user account
+                try (PreparedStatement ps = con.prepareStatement(
+                        "SELECT user_id, username FROM users WHERE student_id = ? AND user_id != ?")) {
+                    ps.setInt(1, studentId);
+                    ps.setInt(2, userId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            int otherUserId = rs.getInt("user_id");
+                            String otherUsername = rs.getString("username");
+                            con.rollback();
+                            sendError(ex, 409, "Student ID " + studentId + " (" + studentName + ") is already linked to user account '"
+                                    + otherUsername + "' (userId: " + otherUserId + ").");
+                            return;
+                        }
+                    }
+                }
+
+                // 4. Update link
+                try (PreparedStatement ps = con.prepareStatement(
+                        "UPDATE users SET student_id = ? WHERE user_id = ?")) {
+                    ps.setInt(1, studentId);
+                    ps.setInt(2, userId);
+                    ps.executeUpdate();
+                }
+
+                con.commit();
+
+                // Refresh memory session if target user is currently active
+                auth.refreshUserStudentLink(userId, studentId);
+
+                send(ex, 200, json(
+                        "message", "User account '" + targetUsername + "' successfully linked to student " + studentId + " (" + studentName + ").",
+                        "userId", userId,
+                        "username", targetUsername,
+                        "studentId", studentId,
+                        "studentName", studentName
+                ));
+            } catch (SQLException e) {
+                con.rollback();
+                throw e;
+            }
+        } catch (SQLException e) {
+            System.err.println("Admin link account SQL error: " + e.getMessage());
+            sendError(ex, 500, "Internal server error. Please try again later.");
+        }
+    }
+
+    // POST /api/admin/accounts/unlink (ADMIN ONLY)
+    // Parameters: userId
+    private static void adminUnlinkAccount(HttpExchange ex) throws IOException {
+        if (!"POST".equals(ex.getRequestMethod())) {
+            sendError(ex, 405, "Method not allowed. Supported method: POST.");
+            return;
+        }
+        Map<String, String> params = readForm(ex);
+        int userId;
+        try {
+            userId = Integer.parseInt(params.getOrDefault("userId", "").trim());
+            if (userId <= 0) {
+                sendError(ex, 400, "userId must be a positive integer.");
+                return;
+            }
+        } catch (NumberFormatException e) {
+            sendError(ex, 400, "Valid userId is required.");
+            return;
+        }
+
+        try (Connection con = DBConnection.getConnection()) {
+            con.setAutoCommit(false);
+            try {
+                // 1. Verify target user exists
+                String targetUsername;
+                Role targetRole;
+                Integer currentLinkedStudentId;
+                try (PreparedStatement ps = con.prepareStatement(
+                        "SELECT username, role, student_id FROM users WHERE user_id = ? FOR UPDATE")) {
+                    ps.setInt(1, userId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (!rs.next()) {
+                            con.rollback();
+                            sendError(ex, 404, "User account not found (userId: " + userId + ").");
+                            return;
+                        }
+                        targetUsername = rs.getString("username");
+                        targetRole = Role.fromString(rs.getString("role"));
+                        int sid = rs.getInt("student_id");
+                        currentLinkedStudentId = rs.wasNull() ? null : sid;
+                    }
+                }
+
+                if (targetRole != Role.STUDENT) {
+                    con.rollback();
+                    sendError(ex, 400, "Cannot unlink non-student accounts.");
+                    return;
+                }
+
+                if (currentLinkedStudentId == null) {
+                    con.rollback();
+                    sendError(ex, 400, "User account '" + targetUsername + "' is not currently linked to any student record.");
+                    return;
+                }
+
+                // 2. Unlink in users table
+                try (PreparedStatement ps = con.prepareStatement(
+                        "UPDATE users SET student_id = NULL WHERE user_id = ?")) {
+                    ps.setInt(1, userId);
+                    ps.executeUpdate();
+                }
+
+                con.commit();
+
+                // Refresh memory session if active
+                auth.refreshUserStudentLink(userId, null);
+
+                send(ex, 200, json(
+                        "message", "Student record successfully unlinked from user account '" + targetUsername + "'.",
+                        "userId", userId,
+                        "username", targetUsername,
+                        "previousStudentId", currentLinkedStudentId,
+                        "studentId", null
+                ));
+            } catch (SQLException e) {
+                con.rollback();
+                throw e;
+            }
+        } catch (SQLException e) {
+            System.err.println("Admin unlink account SQL error: " + e.getMessage());
+            sendError(ex, 500, "Internal server error. Please try again later.");
+        }
+    }
+
     // ===================== STUDENT PORTAL HANDLERS (PHASE 4) =====================
 
     // GET /api/student/me
@@ -775,11 +1011,32 @@ public class WebServer {
         return false;
     }
 
-    // Reads form data sent by client
+    // Reads form or JSON data sent by client, augmented with query parameters
     private static Map<String, String> readForm(HttpExchange ex) throws IOException {
-        try (InputStream in = ex.getRequestBody()) {
-            return parseQuery(new String(in.readAllBytes(), StandardCharsets.UTF_8));
+        Map<String, String> values = new HashMap<>();
+        if (ex.getRequestURI().getRawQuery() != null) {
+            values.putAll(parseQuery(ex.getRequestURI().getRawQuery()));
         }
+        try (InputStream in = ex.getRequestBody()) {
+            String body = new String(in.readAllBytes(), StandardCharsets.UTF_8).trim();
+            if (body.startsWith("{") && body.endsWith("}")) {
+                values.putAll(parseSimpleJson(body));
+            } else if (!body.isEmpty()) {
+                values.putAll(parseQuery(body));
+            }
+        }
+        return values;
+    }
+
+    private static Map<String, String> parseSimpleJson(String json) {
+        Map<String, String> map = new HashMap<>();
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\"([^\"]+)\"\\s*:\\s*(?:\"([^\"]*)\"|([0-9]+(?:\\.[0-9]+)?|true|false|null))").matcher(json);
+        while (m.find()) {
+            String key = m.group(1);
+            String val = m.group(2) != null ? m.group(2) : m.group(3);
+            map.put(key, "null".equalsIgnoreCase(val) ? "" : val);
+        }
+        return map;
     }
 
     private static Map<String, String> parseQuery(String text) {

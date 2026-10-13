@@ -232,6 +232,24 @@ class AuthManager {
         return token;
     }
 
+    // Immediately updates any active in-memory session for the given userId
+    public void refreshUserStudentLink(int userId, Integer newStudentId) {
+        for (Map.Entry<String, UserAccount> entry : sessions.entrySet()) {
+            UserAccount account = entry.getValue();
+            if (account != null && account.getUserId() == userId) {
+                UserAccount updated = new UserAccount(
+                        account.getUserId(),
+                        account.getFullName(),
+                        account.getUsername(),
+                        account.getEmail(),
+                        account.getRole(),
+                        newStudentId
+                );
+                sessions.put(entry.getKey(), updated);
+            }
+        }
+    }
+
     // Authoritative session resolution:
     // Validates token against memory, then checks current state from MySQL.
     // If a user was deleted or their role changed, this ensures the session does not retain stale privileges.
