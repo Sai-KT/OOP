@@ -1,6 +1,8 @@
 /* ================================================================
-   CampusFlow Dedicated Auth Styles (Clean & Minimal Enterprise)
-   Distinct aesthetics for Admin Console (Dark) vs Student Portal (Light)
+   CampusFlow Enterprise Auth Design System
+   Distinct Aesthetics:
+     - Admin Console: Stealth Obsidian, Animated Precision Grid, Cyber Orbs
+     - Student Portal: Luminous Academy, Architectural Matrix, Luminous Azure Orbs
    ================================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap');
@@ -9,6 +11,7 @@
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 *, *::before, *::after {
@@ -29,33 +32,142 @@ html, body {
 }
 
 /* ================================================================
-   ADMIN CONSOLE (DARK MINIMAL THEME)
-   Palette: Deep Obsidian (#090D16), Slate Glass (#0F172A), Indigo/Emerald Accents
+   SHARED AMBIENT BACKGROUND & TEXTURE ENGINE
+   ================================================================ */
+
+.ambient-bg {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Organic Noise / Luxury Micro-Texture Overlay */
+.noise-overlay {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 140px 140px;
+  opacity: 0.6;
+  mix-blend-mode: overlay;
+}
+
+/* Floating Ambient Orbs (Hardware-Accelerated) */
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(85px);
+  will-change: transform;
+  pointer-events: none;
+}
+
+/* ================================================================
+   1. ADMINISTRATOR CONSOLE (STEALTH OBSIDIAN & CYBER-SECURITY GRID)
    ================================================================ */
 
 body.admin-body {
-  background-color: #07090e;
-  background-image: 
-    radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 60%),
-    radial-gradient(circle at 100% 100%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+  background-color: #05070c;
   color: #f1f5f9;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px 16px;
+  padding: 32px 16px;
   min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
 }
 
+/* Precision Grid Texture for Admin */
+.admin-body .grid-texture {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0.95) 0%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0.95) 0%, transparent 75%);
+  opacity: 0.85;
+}
+
+/* Admin Luminous Orbs */
+.orb-admin-1 {
+  width: 580px;
+  height: 580px;
+  top: -140px;
+  left: 20%;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.32) 0%, rgba(79, 70, 229, 0.12) 50%, transparent 70%);
+  animation: floatAdmin1 18s ease-in-out infinite alternate;
+}
+
+.orb-admin-2 {
+  width: 520px;
+  height: 520px;
+  bottom: -120px;
+  right: 15%;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.22) 0%, rgba(6, 182, 212, 0.1) 50%, transparent 70%);
+  animation: floatAdmin2 24s ease-in-out infinite alternate;
+}
+
+.orb-admin-3 {
+  width: 400px;
+  height: 400px;
+  top: 40%;
+  left: -100px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.22) 0%, transparent 65%);
+  animation: floatAdmin3 28s ease-in-out infinite alternate;
+}
+
+@keyframes floatAdmin1 {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(70px, 45px, 0) scale(1.09); }
+  100% { transform: translate3d(-50px, 90px, 0) scale(0.94); }
+}
+
+@keyframes floatAdmin2 {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-80px, -60px, 0) scale(1.12); }
+  100% { transform: translate3d(60px, -35px, 0) scale(0.92); }
+}
+
+@keyframes floatAdmin3 {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(90px, -70px, 0); }
+}
+
+/* Admin Glassmorphic Card */
 .admin-card {
+  position: relative;
+  z-index: 1;
   width: 100%;
-  max-width: 410px;
-  background: rgba(15, 23, 42, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 18px;
-  padding: 36px 32px;
-  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  max-width: 415px;
+  background: rgba(13, 18, 30, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 38px 34px;
+  box-shadow: 
+    0 0 0 1px rgba(0, 0, 0, 0.6),
+    0 25px 60px -15px rgba(0, 0, 0, 0.8),
+    0 0 90px -20px rgba(99, 102, 241, 0.22);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  transition: transform 0.3s var(--ease-spring), box-shadow 0.3s var(--ease-spring);
+}
+
+/* Subtle Specular Top Highlight Rim on Admin Card */
+.admin-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  padding: 1px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.04) 40%, transparent 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
 }
 
 .admin-header {
@@ -69,21 +181,27 @@ body.admin-body {
   gap: 10px;
   text-decoration: none;
   margin-bottom: 18px;
+  transition: transform 0.2s ease;
+}
+
+.admin-brand:hover {
+  transform: translateY(-1px);
 }
 
 .admin-brand-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
   background: linear-gradient(135deg, #4f46e5, #6366f1);
   color: #ffffff;
   display: grid;
   place-items: center;
-  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
+  box-shadow: 0 6px 18px rgba(79, 70, 229, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .admin-brand-title {
-  font-size: 19px;
+  font-size: 19.5px;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: #ffffff;
@@ -96,32 +214,38 @@ body.admin-body {
 .admin-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 3px 10px;
+  gap: 7px;
+  padding: 3.5px 11px;
   border-radius: 99px;
   background: rgba(99, 102, 241, 0.12);
-  border: 1px solid rgba(99, 102, 241, 0.25);
+  border: 1px solid rgba(99, 102, 241, 0.28);
   color: #a5b4fc;
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   margin-bottom: 14px;
 }
 
 .admin-badge-dot {
-  width: 6px;
-  height: 6px;
+  width: 6.5px;
+  height: 6.5px;
   border-radius: 50%;
   background: #34d399;
-  box-shadow: 0 0 6px #34d399;
+  box-shadow: 0 0 8px #34d399;
+  animation: pulseGreen 2.4s ease-in-out infinite;
+}
+
+@keyframes pulseGreen {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.8; box-shadow: 0 0 12px #34d399; }
 }
 
 .admin-title {
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 23px;
+  font-weight: 750;
   color: #ffffff;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   margin-bottom: 6px;
 }
 
@@ -130,7 +254,7 @@ body.admin-body {
   color: #94a3b8;
 }
 
-/* ADMIN FORM INPUTS */
+/* Admin Inputs */
 .admin-card .form-group {
   margin-bottom: 18px;
   text-align: left;
@@ -148,24 +272,24 @@ body.admin-body {
   position: relative;
   display: flex;
   align-items: center;
-  background: rgba(2, 6, 23, 0.55);
+  background: rgba(4, 8, 18, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 11px;
+  border-radius: 12px;
   transition: all 0.2s ease;
 }
 
 .admin-card .input-wrap:hover {
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.22);
 }
 
 .admin-card .input-wrap:focus-within {
   border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
-  background: rgba(2, 6, 23, 0.85);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25), 0 0 15px rgba(99, 102, 241, 0.15);
+  background: rgba(4, 8, 18, 0.85);
 }
 
 .admin-card .input-icon {
-  width: 42px;
+  width: 44px;
   display: grid;
   place-items: center;
   color: #64748b;
@@ -173,14 +297,14 @@ body.admin-body {
 }
 
 .admin-card .input-wrap:focus-within .input-icon {
-  color: #818cf8;
+  color: #a5b4fc;
 }
 
 .admin-card .form-input {
   flex: 1;
   background: transparent;
   border: none;
-  height: 44px;
+  height: 45px;
   font-family: inherit;
   font-size: 14px;
   color: #ffffff;
@@ -195,8 +319,8 @@ body.admin-body {
 .admin-card .btn-pw-toggle {
   background: transparent;
   border: none;
-  width: 40px;
-  height: 44px;
+  width: 42px;
+  height: 45px;
   cursor: pointer;
   color: #64748b;
   display: grid;
@@ -208,17 +332,9 @@ body.admin-body {
   color: #cbd5e1;
 }
 
-.admin-card .btn-pw-toggle .eye-closed {
-  display: none;
-}
-
-.admin-card .btn-pw-toggle.showing .eye-open {
-  display: none;
-}
-
-.admin-card .btn-pw-toggle.showing .eye-closed {
-  display: block;
-}
+.admin-card .btn-pw-toggle .eye-closed { display: none; }
+.admin-card .btn-pw-toggle.showing .eye-open { display: none; }
+.admin-card .btn-pw-toggle.showing .eye-closed { display: block; }
 
 .admin-card .caps-warning {
   display: flex;
@@ -231,10 +347,12 @@ body.admin-body {
 }
 
 .admin-card .btn-submit {
+  position: relative;
+  overflow: hidden;
   width: 100%;
-  height: 45px;
+  height: 46px;
   border: none;
-  border-radius: 11px;
+  border-radius: 12px;
   background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
   color: #ffffff;
   font-family: inherit;
@@ -246,15 +364,15 @@ body.admin-body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin-top: 22px;
-  box-shadow: 0 8px 20px -4px rgba(79, 70, 229, 0.45);
-  transition: all 0.2s var(--ease-spring);
+  margin-top: 24px;
+  box-shadow: 0 8px 22px -4px rgba(79, 70, 229, 0.45);
+  transition: all 0.22s var(--ease-spring);
 }
 
 .admin-card .btn-submit:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 12px 24px -4px rgba(79, 70, 229, 0.6);
-  filter: brightness(1.06);
+  transform: translateY(-1.5px);
+  box-shadow: 0 12px 28px -4px rgba(79, 70, 229, 0.65);
+  filter: brightness(1.07);
 }
 
 .admin-card .btn-submit:disabled {
@@ -265,7 +383,7 @@ body.admin-body {
 .admin-footer {
   margin-top: 24px;
   padding-top: 18px;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   text-align: center;
   font-size: 12.5px;
   color: #64748b;
@@ -274,7 +392,7 @@ body.admin-body {
 .admin-footer a {
   color: #818cf8;
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 650;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -288,31 +406,95 @@ body.admin-body {
 }
 
 /* ================================================================
-   STUDENT PORTAL (LIGHT MINIMAL THEME)
-   Palette: Crisp White (#FFFFFF), Warm Slate Canvas (#F8FAFC), Academic Blue (#0284C7, #2563EB)
+   2. STUDENT PORTAL (LUMINOUS ACADEMY & ARCHITECTURAL MATRIX)
    ================================================================ */
 
 body.student-body {
-  background-color: #f8fafc;
-  background-image: 
-    radial-gradient(circle at 10% 20%, rgba(2, 132, 199, 0.05) 0%, transparent 40%),
-    radial-gradient(circle at 90% 80%, rgba(37, 99, 235, 0.04) 0%, transparent 40%);
+  background-color: #f1f5f9;
   color: #0f172a;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px 16px;
+  padding: 32px 16px;
   min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
 }
 
+/* Architectural Dotted Matrix Texture for Student */
+.student-body .dot-texture {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(15, 23, 42, 0.09) 1.2px, transparent 1.2px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0.9) 10%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0.9) 10%, transparent 80%);
+  opacity: 0.85;
+}
+
+/* Student Luminous Orbs */
+.orb-student-1 {
+  width: 620px;
+  height: 620px;
+  top: -150px;
+  left: 10%;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.3) 0%, rgba(37, 99, 235, 0.14) 50%, transparent 70%);
+  animation: floatStudent1 20s ease-in-out infinite alternate;
+}
+
+.orb-student-2 {
+  width: 560px;
+  height: 560px;
+  bottom: -130px;
+  right: 8%;
+  background: radial-gradient(circle, rgba(129, 140, 248, 0.28) 0%, rgba(99, 102, 241, 0.12) 50%, transparent 70%);
+  animation: floatStudent2 24s ease-in-out infinite alternate;
+}
+
+.orb-student-3 {
+  width: 440px;
+  height: 440px;
+  top: 35%;
+  right: -90px;
+  background: radial-gradient(circle, rgba(52, 211, 153, 0.18) 0%, transparent 65%);
+  animation: floatStudent3 22s ease-in-out infinite alternate;
+}
+
+@keyframes floatStudent1 {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(60px, 65px, 0) scale(1.1); }
+  100% { transform: translate3d(-35px, 35px, 0) scale(0.95); }
+}
+
+@keyframes floatStudent2 {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-65px, -45px, 0) scale(1.09); }
+  100% { transform: translate3d(45px, -65px, 0) scale(0.93); }
+}
+
+@keyframes floatStudent3 {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-55px, 75px, 0); }
+}
+
+/* Student Pearlescent Card */
 .student-card {
+  position: relative;
+  z-index: 1;
   width: 100%;
-  max-width: 430px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 20px;
-  padding: 36px 34px;
-  box-shadow: 0 15px 35px -5px rgba(15, 23, 42, 0.06), 0 0 1px 1px rgba(15, 23, 42, 0.02);
+  max-width: 435px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  border-radius: 22px;
+  padding: 38px 34px;
+  box-shadow: 
+    0 25px 55px -12px rgba(15, 23, 42, 0.08),
+    0 1px 3px rgba(0, 0, 0, 0.03),
+    0 0 0 1px rgba(226, 232, 240, 0.7),
+    0 0 70px -15px rgba(37, 99, 235, 0.14);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  transition: transform 0.3s var(--ease-spring), box-shadow 0.3s var(--ease-spring);
 }
 
 .student-header {
@@ -326,21 +508,27 @@ body.student-body {
   gap: 10px;
   text-decoration: none;
   margin-bottom: 16px;
+  transition: transform 0.2s ease;
+}
+
+.student-brand:hover {
+  transform: translateY(-1px);
 }
 
 .student-brand-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
   background: linear-gradient(135deg, #0284c7, #0369a1);
   color: #ffffff;
   display: grid;
   place-items: center;
-  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+  box-shadow: 0 5px 16px rgba(2, 132, 199, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.35);
 }
 
 .student-brand-title {
-  font-size: 19px;
+  font-size: 19.5px;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: #0f172a;
@@ -354,23 +542,23 @@ body.student-body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 10px;
+  padding: 3.5px 12px;
   border-radius: 99px;
   background: #e0f2fe;
   border: 1px solid #bae6fd;
   color: #0369a1;
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   margin-bottom: 14px;
 }
 
 .student-title {
-  font-size: 22px;
+  font-size: 23px;
   font-weight: 750;
   color: #0f172a;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   margin-bottom: 6px;
 }
 
@@ -379,14 +567,15 @@ body.student-body {
   color: #64748b;
 }
 
-/* SEGMENTED TABS (SIGN IN VS REGISTER) */
+/* Tactile Segmented Tabs */
 .student-tabs {
   display: flex;
   background: #f1f5f9;
   padding: 4px;
-  border-radius: 11px;
+  border-radius: 12px;
   margin-bottom: 22px;
   gap: 4px;
+  border: 1px solid #e2e8f0;
 }
 
 .student-tab-btn {
@@ -398,18 +587,18 @@ body.student-body {
   font-family: inherit;
   font-size: 13px;
   font-weight: 650;
-  border-radius: 8px;
+  border-radius: 9px;
   cursor: pointer;
-  transition: all 0.18s ease;
+  transition: all 0.2s var(--ease-spring);
 }
 
 .student-tab-btn.active {
   background: #ffffff;
   color: #0f172a;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
-/* STUDENT FORM INPUTS */
+/* Student Form Inputs */
 .student-card .form-group {
   margin-bottom: 16px;
   text-align: left;
@@ -427,24 +616,25 @@ body.student-body {
   position: relative;
   display: flex;
   align-items: center;
-  background: #f8fafc;
+  background: rgba(248, 250, 252, 0.9);
   border: 1.5px solid #e2e8f0;
-  border-radius: 11px;
+  border-radius: 12px;
   transition: all 0.2s ease;
 }
 
 .student-card .input-wrap:hover {
   border-color: #cbd5e1;
+  background: #ffffff;
 }
 
 .student-card .input-wrap:focus-within {
   border-color: #0284c7;
-  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.16), 0 0 12px rgba(2, 132, 199, 0.08);
   background: #ffffff;
 }
 
 .student-card .input-icon {
-  width: 42px;
+  width: 44px;
   display: grid;
   place-items: center;
   color: #94a3b8;
@@ -459,7 +649,7 @@ body.student-body {
   flex: 1;
   background: transparent;
   border: none;
-  height: 44px;
+  height: 45px;
   font-family: inherit;
   font-size: 14px;
   color: #0f172a;
@@ -474,8 +664,8 @@ body.student-body {
 .student-card .btn-pw-toggle {
   background: transparent;
   border: none;
-  width: 40px;
-  height: 44px;
+  width: 42px;
+  height: 45px;
   cursor: pointer;
   color: #94a3b8;
   display: grid;
@@ -487,17 +677,9 @@ body.student-body {
   color: #0f172a;
 }
 
-.student-card .btn-pw-toggle .eye-closed {
-  display: none;
-}
-
-.student-card .btn-pw-toggle.showing .eye-open {
-  display: none;
-}
-
-.student-card .btn-pw-toggle.showing .eye-closed {
-  display: block;
-}
+.student-card .btn-pw-toggle .eye-closed { display: none; }
+.student-card .btn-pw-toggle.showing .eye-open { display: none; }
+.student-card .btn-pw-toggle.showing .eye-closed { display: block; }
 
 .student-card .caps-warning {
   display: flex;
@@ -511,9 +693,9 @@ body.student-body {
 
 .student-card .btn-submit {
   width: 100%;
-  height: 45px;
+  height: 46px;
   border: none;
-  border-radius: 11px;
+  border-radius: 12px;
   background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
   color: #ffffff;
   font-family: inherit;
@@ -525,15 +707,15 @@ body.student-body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin-top: 20px;
-  box-shadow: 0 6px 18px -3px rgba(2, 132, 199, 0.35);
-  transition: all 0.2s var(--ease-spring);
+  margin-top: 22px;
+  box-shadow: 0 8px 22px -4px rgba(2, 132, 199, 0.4);
+  transition: all 0.22s var(--ease-spring);
 }
 
 .student-card .btn-submit:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 22px -3px rgba(2, 132, 199, 0.45);
-  filter: brightness(1.04);
+  transform: translateY(-1.5px);
+  box-shadow: 0 12px 26px -4px rgba(2, 132, 199, 0.55);
+  filter: brightness(1.05);
 }
 
 .student-card .btn-submit:disabled {
@@ -541,7 +723,7 @@ body.student-body {
   cursor: wait;
 }
 
-/* PASSWORD STRENGTH FOR STUDENT SIGNUP */
+/* Password strength */
 .strength-track {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -582,7 +764,7 @@ body.student-body {
 .student-footer a {
   color: #0284c7;
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 650;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -596,35 +778,35 @@ body.student-body {
 }
 
 /* ================================================================
-   SHARED ALERT CARD COMPONENT (Clean & Minimal)
+   3. SHARED REFINED ALERT COMPONENT
    ================================================================ */
 
 .alert-card {
-  padding: 11px 14px;
-  border-radius: 10px;
+  padding: 12px 15px;
+  border-radius: 11px;
   font-size: 13px;
   line-height: 1.45;
-  margin-top: 14px;
+  margin-top: 15px;
   display: flex;
   align-items: flex-start;
   gap: 10px;
   text-align: left;
 }
 
-/* Admin dark alert cards */
+/* Admin Dark Alerts */
 .admin-card .alert-card.error {
   background: rgba(239, 68, 68, 0.12);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  border: 1px solid rgba(239, 68, 68, 0.35);
   color: #fca5a5;
 }
 
 .admin-card .alert-card.success {
   background: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border: 1px solid rgba(16, 185, 129, 0.35);
   color: #6ee7b7;
 }
 
-/* Student light alert cards */
+/* Student Light Alerts */
 .student-card .alert-card.error {
   background: #fef2f2;
   border: 1px solid #fecaca;
@@ -635,4 +817,14 @@ body.student-body {
   background: #f0fdf4;
   border: 1px solid #bbf7d0;
   color: #15803d;
+}
+
+/* Respect user accessibility settings */
+@media (prefers-reduced-motion: reduce) {
+  .orb {
+    animation: none !important;
+  }
+  .admin-badge-dot {
+    animation: none !important;
+  }
 }
