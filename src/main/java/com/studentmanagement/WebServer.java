@@ -17,19 +17,13 @@ import java.sql.*;
 import java.util.*;
 
 /* ================================================================
-   WEB SERVER FOR THE BROWSER DASHBOARD (NEW FILE)
-   - Main.java (console menu) is NOT changed. This class only REUSES
-     StudentManager, DBConnection, Student and Course from Main.java.
-   - Uses the JDK built-in HttpServer, so no Spring Boot and no new library.
-   - Serves the dashboard from the "frontend" folder and JSON data at /api/...
-
-   - Login / sign-up (AuthManager.java) and attendance (AttendanceManager.java)
-     create their own tables when the server starts.
-
-   Run (from the project folder):
-     mvn -q compile dependency:build-classpath -Dmdep.outputFile=cp.txt
-     java -cp "target/classes:$(cat cp.txt)" com.studentmanagement.WebServer
-   Then open: http://localhost:8080  (you will see the login page first)
+   WEB SERVER FOR THE BROWSER DASHBOARD — ROLE-BASED ACCESS CONTROL
+   - Uses JDK built-in HttpServer (zero external web frameworks).
+   - Role-Based Access Control: ADMIN and STUDENT roles enforced in Java.
+   - Never trusts browser-submitted role values; verifies authoritative
+     session data against MySQL via AuthManager.
+   - Admin routes strictly restricted to ADMIN role.
+   - Static routes protect /index.html from anonymous and student users.
    ================================================================ */
 public class WebServer {
 
@@ -38,57 +32,121 @@ public class WebServer {
     private static final Path FRONTEND = Paths.get(System.getenv().getOrDefault("FRONTEND_DIR", "frontend"))
             .toAbsolutePath().normalize();
 
-    // UNIT II: object of the existing StudentManager class (association / message passing).
+    // UNIT II: objects of existing service classes (association / message passing).
     private static final StudentManager manager = new StudentManager();
     private static final AuthManager auth = new AuthManager();
     private static final AttendanceManager attendance = new AttendanceManager();
     private static final String SESSION_COOKIE = "CFSESSION";
 
     public static void main(String[] args) throws IOException {
-        // Create the new tables (users, attendance) if they are missing.
+        // Create required tables if missing (fresh installation support)
         try {
             auth.createTable();
             attendance.createTable();
             try (Connection con = DBConnection.getConnection(); Statement st = con.createStatement()) {
-                st.executeUpdate("CREATE TABLE IF NOT EXISTS department_grades (student_id INT NOT NULL, department_id INT NOT NULL, marks DECIMAL(5,2) NOT NULL, PRIMARY KEY(student_id,department_id), FOREIGN KEY(student_id) REFERENCES students(student_id), FOREIGN KEY(department_id) REFERENCES departments(department_id), CHECK(marks >= 0 AND marks <= 100))");
+                st.executeUpdate("CREATE TABLE IF NOT EXISTS department_grades ("
+                        + "student_id INT NOT NULL, "
+                        + "department_id INT NOT NULL, "
+                        + "marks DECIMAL(5,2) NOT NULL, "
+                        + "PRIMARY KEY(student_id,department_id), "
+                        + "FOREIGN KEY(student_id) REFERENCES students(student_id), "
+                        + "FOREIGN KEY(department_id) REFERENCES departments(department_id), "
+                        + "CHECK(marks >= 0 AND marks <= 100))");
             }
+            // Phase 2/3: Controlled initial administrator provisioning via environment variables
+            auth.bootstrapAdmin();
         } catch (SQLException e) {
-            System.out.println("Could not create users/attendance tables: " + e.getMessage());
-            System.out.println("Check DB_PASSWORD and that sql/schema.sql was loaded.");
+            System.err.println("Database startup initialization notice: " + e.getMessage());
         }
 
         HttpServer server = HttpServer.create(new InetSocketAddress(PORT), 0);
 
-        // Login / sign-up routes (open to everyone)
+        // ---------------- AUTHENTICATION ROUTES ----------------
         server.createContext("/api/auth/signup", WebServer::signup);
         server.createContext("/api/auth/login", WebServer::login);
         server.createContext("/api/auth/logout", WebServer::logout);
         server.createContext("/api/auth/me", WebServer::me);
 
-        // API routes (message passing: browser -> WebServer -> StudentManager -> MySQL via JDBC)
-        // secured(...) = only a logged-in user can use them.
-        server.createContext("/api/departments", secured(WebServer::departments));
-        server.createContext("/api/students", secured(WebServer::students));
-        server.createContext("/api/courses", secured(WebServer::courses));
-        server.createContext("/api/enrollments", secured(WebServer::registrations));
-        server.createContext("/api/registrations", secured(WebServer::registrations));
-        server.createContext("/api/grades", secured(WebServer::grades));
-        server.createContext("/api/gpa", secured(WebServer::gpa));
-        server.createContext("/api/attendance", secured(WebServer::attendance));
+        // ---------------- ADMIN ONLY ENDPOINTS ----------------
+        server.createContext("/api/departments", adminOnly(WebServer::departments));
+        server.createContext("/api/students", adminOnly(WebServer::students));
+        server.createContext("/api/enrollments", adminOnly(WebServer::registrations));
+        server.createContext("/api/registrations", adminOnly(WebServer::registrations));
+        server.createContext("/api/grades", adminOnly(WebServer::grades));
+        server.createContext("/api/gpa", adminOnly(WebServer::gpa));
+        server.createContext("/api/attendance", adminOnly(WebServer::attendance));
+
+        // ---------------- SHARED AUTHENTICATED ENDPOINTS (ADMIN & STUDENT) ----------------
+        // Course catalog view is available to all authenticated users
+        server.createContext("/api/courses", authenticated(WebServer::courses));
+
+        // ---------------- STATIC & HTML ROUTES ----------------
         server.createContext("/", WebServer::staticFile);
 
-        server.setExecutor(null); // default single-threaded executor: one request at a time
+        server.setExecutor(null); // default executor
         server.start();
         System.out.println("CampusFlow dashboard running at http://localhost:" + PORT);
         System.out.println("Serving frontend from: " + FRONTEND);
     }
 
-    // ===================== LOGIN / SIGN-UP =====================
+    // ===================== AUTHORIZATION WRAPPERS =====================
 
-    // POST /api/auth/signup  (fullName, username, email, password)
+    // Enforces ADMIN-only authorization.
+    // Returns 401 if unauthenticated, 403 if authenticated without ADMIN role.
+    private static HttpHandler adminOnly(HttpHandler handler) {
+        return ex -> {
+            if (handleOptions(ex)) return;
+            UserAccount user = auth.getUser(sessionToken(ex));
+            if (user == null) {
+                sendError(ex, 401, "Please log in first.");
+                return;
+            }
+            if (user.getRole() != Role.ADMIN) {
+                sendError(ex, 403, "Access denied: Administrator privileges required.");
+                return;
+            }
+            handler.handle(ex);
+        };
+    }
+
+    // Enforces authentication for shared endpoints (accessible by ADMIN and STUDENT).
+    // Returns 401 if unauthenticated.
+    private static HttpHandler authenticated(HttpHandler handler) {
+        return ex -> {
+            if (handleOptions(ex)) return;
+            UserAccount user = auth.getUser(sessionToken(ex));
+            if (user == null) {
+                sendError(ex, 401, "Please log in first.");
+                return;
+            }
+            handler.handle(ex);
+        };
+    }
+
+    // Enforces STUDENT-only authorization.
+    // Returns 401 if unauthenticated, 403 if authenticated without STUDENT role.
+    private static HttpHandler studentOnly(HttpHandler handler) {
+        return ex -> {
+            if (handleOptions(ex)) return;
+            UserAccount user = auth.getUser(sessionToken(ex));
+            if (user == null) {
+                sendError(ex, 401, "Please log in first.");
+                return;
+            }
+            if (user.getRole() != Role.STUDENT) {
+                sendError(ex, 403, "Access denied: Student privileges required.");
+                return;
+            }
+            handler.handle(ex);
+        };
+    }
+
+    // ===================== LOGIN / SIGN-UP / AUTH =====================
+
+    // POST /api/auth/signup (fullName, username, email, password)
     private static void signup(HttpExchange ex) throws IOException {
         if (handleOptions(ex)) return;
-        if (!"POST".equals(ex.getRequestMethod())) { sendError(ex, 405, "Use POST."); return; }
+        if (!"POST".equals(ex.getRequestMethod())) { sendError(ex, 405, "Method not allowed. Supported method: POST."); return; }
         Map<String, String> form = readForm(ex);
         try {
             auth.signup(form.getOrDefault("fullName", "").trim(), form.getOrDefault("username", "").trim(),
@@ -99,26 +157,28 @@ public class WebServer {
         } catch (DuplicateUserException e) {
             sendError(ex, 409, e.getMessage());
         } catch (SQLException e) {
-            sendError(ex, 500, "Database error: " + e.getMessage());
+            System.err.println("Signup SQL error: " + e.getMessage());
+            sendError(ex, 500, "Internal server error. Please try again later.");
         } finally {
             System.out.println("Sign-up attempt completed (web).");
         }
     }
 
-    // POST /api/auth/login  (username = username or email, password)
+    // POST /api/auth/login (username = username or email, password)
     private static void login(HttpExchange ex) throws IOException {
         if (handleOptions(ex)) return;
-        if (!"POST".equals(ex.getRequestMethod())) { sendError(ex, 405, "Use POST."); return; }
+        if (!"POST".equals(ex.getRequestMethod())) { sendError(ex, 405, "Method not allowed. Supported method: POST."); return; }
         Map<String, String> form = readForm(ex);
         try {
             UserAccount user = auth.login(form.getOrDefault("username", "").trim(), form.getOrDefault("password", ""));
             String token = auth.createSession(user);
-            ex.getResponseHeaders().add("Set-Cookie", SESSION_COOKIE + "=" + token + "; Path=/; HttpOnly; SameSite=Lax");
+            ex.getResponseHeaders().add("Set-Cookie", sessionCookieHeader(token));
             send(ex, 200, userJson(user));
         } catch (InvalidLoginException e) {
             sendError(ex, 401, e.getMessage());
         } catch (SQLException e) {
-            sendError(ex, 500, "Database error: " + e.getMessage());
+            System.err.println("Login SQL error: " + e.getMessage());
+            sendError(ex, 500, "Internal server error. Please try again later.");
         } finally {
             System.out.println("Login attempt completed (web).");
         }
@@ -127,24 +187,29 @@ public class WebServer {
     // POST /api/auth/logout
     private static void logout(HttpExchange ex) throws IOException {
         if (handleOptions(ex)) return;
+        if (!"POST".equals(ex.getRequestMethod())) { sendError(ex, 405, "Method not allowed. Supported method: POST."); return; }
         auth.logout(sessionToken(ex));
-        ex.getResponseHeaders().add("Set-Cookie", SESSION_COOKIE + "=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax");
+        ex.getResponseHeaders().add("Set-Cookie", expiredCookieHeader());
         send(ex, 200, json("message", "Logged out."));
     }
 
-    // GET /api/auth/me — who is logged in?
+    // GET /api/auth/me — returns current authoritative user data
     private static void me(HttpExchange ex) throws IOException {
         if (handleOptions(ex)) return;
+        if (!"GET".equals(ex.getRequestMethod())) { sendError(ex, 405, "Method not allowed. Supported method: GET."); return; }
         UserAccount user = auth.getUser(sessionToken(ex));
         if (user == null) sendError(ex, 401, "Not logged in.");
         else send(ex, 200, userJson(user));
     }
 
-    // ===================== API HANDLERS =====================
+    // ===================== ADMIN API HANDLERS =====================
 
-    // GET /api/departments and POST /api/departments
+    // GET /api/departments and POST /api/departments (ADMIN ONLY)
     private static void departments(HttpExchange ex) throws IOException {
-        if (handleOptions(ex)) return;
+        if (!"GET".equals(ex.getRequestMethod()) && !"POST".equals(ex.getRequestMethod())) {
+            sendError(ex, 405, "Method not allowed. Supported methods: GET, POST.");
+            return;
+        }
         try {
             if ("POST".equals(ex.getRequestMethod())) {
                 Map<String, String> form = readForm(ex);
@@ -178,10 +243,7 @@ public class WebServer {
                 send(ex, 201, json("message", "Department saved."));
                 return;
             }
-            if (!"GET".equals(ex.getRequestMethod())) {
-                sendError(ex, 405, "Use GET or POST.");
-                return;
-            }
+
             try (Connection con = DBConnection.getConnection();
                  PreparedStatement ps = con.prepareStatement("SELECT department_id, department_name FROM departments ORDER BY department_id");
                  ResultSet rs = ps.executeQuery()) {
@@ -194,13 +256,17 @@ public class WebServer {
         } catch (SQLIntegrityConstraintViolationException e) {
             sendError(ex, 409, "That department ID already exists, or the department does not exist.");
         } catch (SQLException e) {
-            sendError(ex, 500, "Database error: " + e.getMessage());
+            System.err.println("Departments SQL error: " + e.getMessage());
+            sendError(ex, 500, "Internal server error. Please try again later.");
         }
     }
 
-    // GET /api/students   |   POST /api/students
+    // GET /api/students | POST /api/students (ADMIN ONLY)
     private static void students(HttpExchange ex) throws IOException {
-        if (handleOptions(ex)) return;
+        if (!"GET".equals(ex.getRequestMethod()) && !"POST".equals(ex.getRequestMethod())) {
+            sendError(ex, 405, "Method not allowed. Supported methods: GET, POST.");
+            return;
+        }
         try {
             if ("POST".equals(ex.getRequestMethod())) {
                 Map<String, String> form = readForm(ex);
@@ -251,13 +317,17 @@ public class WebServer {
         } catch (SQLIntegrityConstraintViolationException e) {
             sendError(ex, 409, "A student with this ID or email already exists, or the department is invalid.");
         } catch (SQLException e) {
-            sendError(ex, 500, "Database error: " + e.getMessage());
+            System.err.println("Students SQL error: " + e.getMessage());
+            sendError(ex, 500, "Internal server error. Please try again later.");
         }
     }
 
-    // GET /api/courses — course details plus confirmed / waitlisted counts
+    // GET /api/courses — course catalog view (ADMIN AND STUDENT)
     private static void courses(HttpExchange ex) throws IOException {
-        if (handleOptions(ex)) return;
+        if (!"GET".equals(ex.getRequestMethod())) {
+            sendError(ex, 405, "Method not allowed. Supported method: GET.");
+            return;
+        }
         try {
             manager.loadCourses(); // existing JDBC method: fills Map<String, Course>
             Map<String, int[]> counts = new HashMap<>();
@@ -287,13 +357,17 @@ public class WebServer {
             }
             send(ex, 200, array(rows));
         } catch (SQLException e) {
-            sendError(ex, 500, "Database error: " + e.getMessage());
+            System.err.println("Courses SQL error: " + e.getMessage());
+            sendError(ex, 500, "Internal server error. Please try again later.");
         }
     }
 
-    // GET /api/registrations   |   POST /api/registrations
+    // GET /api/registrations | POST /api/registrations (ADMIN ONLY)
     private static void registrations(HttpExchange ex) throws IOException {
-        if (handleOptions(ex)) return;
+        if (!"GET".equals(ex.getRequestMethod()) && !"POST".equals(ex.getRequestMethod())) {
+            sendError(ex, 405, "Method not allowed. Supported methods: GET, POST.");
+            return;
+        }
         if ("POST".equals(ex.getRequestMethod())) {
             Map<String, String> form = readForm(ex);
             try {
@@ -327,9 +401,9 @@ public class WebServer {
             } catch (NumberFormatException e) {
                 sendError(ex, 400, "Select a valid student.");
             } catch (SQLException e) {
-                sendError(ex, 500, "Database error: " + e.getMessage());
+                System.err.println("Registration SQL error: " + e.getMessage());
+                sendError(ex, 500, "Internal server error. Please try again later.");
             } finally {
-                // UNIT IV: finally always executes.
                 System.out.println("Enrollment attempt completed (web).");
             }
             return;
@@ -356,13 +430,17 @@ public class WebServer {
             }
             send(ex, 200, array(rows));
         } catch (SQLException e) {
-            sendError(ex, 500, "Database error: " + e.getMessage());
+            System.err.println("Registrations list SQL error: " + e.getMessage());
+            sendError(ex, 500, "Internal server error. Please try again later.");
         }
     }
 
-    // GET /api/grades | POST /api/grades — department-based marks for the dashboard.
+    // GET /api/grades | POST /api/grades (ADMIN ONLY)
     private static void grades(HttpExchange ex) throws IOException {
-        if (handleOptions(ex)) return;
+        if (!"GET".equals(ex.getRequestMethod()) && !"POST".equals(ex.getRequestMethod())) {
+            sendError(ex, 405, "Method not allowed. Supported methods: GET, POST.");
+            return;
+        }
         if ("POST".equals(ex.getRequestMethod())) {
             Map<String, String> form = readForm(ex);
             try {
@@ -381,8 +459,12 @@ public class WebServer {
                     try (PreparedStatement ps = con.prepareStatement(sql)) { ps.setInt(1, studentId); ps.setInt(2, departmentId); ps.setDouble(3, marks); ps.executeUpdate(); }
                 }
                 send(ex, 201, json("message", "Department grade saved.", "gpa", calculateDepartmentGpa(studentId)));
-            } catch (NumberFormatException e) { sendError(ex, 400, "Select a student and department and enter valid marks."); }
-              catch (SQLException e) { sendError(ex, 500, "Database error: " + e.getMessage()); }
+            } catch (NumberFormatException e) {
+                sendError(ex, 400, "Select a student and department and enter valid marks.");
+            } catch (SQLException e) {
+                System.err.println("Grades POST SQL error: " + e.getMessage());
+                sendError(ex, 500, "Internal server error. Please try again later.");
+            }
             return;
         }
         String sql = "SELECT g.student_id,s.student_name,g.department_id,d.department_name,g.marks FROM department_grades g JOIN students s ON s.student_id=g.student_id JOIN departments d ON d.department_id=g.department_id ORDER BY g.student_id,g.department_id";
@@ -390,7 +472,10 @@ public class WebServer {
             List<String> rows = new ArrayList<>();
             while (rs.next()) rows.add(json("studentId", rs.getInt(1), "studentName", rs.getString(2), "departmentId", rs.getInt(3), "departmentName", rs.getString(4), "marks", rs.getDouble(5)));
             send(ex, 200, array(rows));
-        } catch (SQLException e) { sendError(ex, 500, "Database error: " + e.getMessage()); }
+        } catch (SQLException e) {
+            System.err.println("Grades GET SQL error: " + e.getMessage());
+            sendError(ex, 500, "Internal server error. Please try again later.");
+        }
     }
 
     private static double calculateDepartmentGpa(int studentId) throws SQLException {
@@ -400,19 +485,30 @@ public class WebServer {
         }
     }
 
+    // GET /api/gpa (ADMIN ONLY)
     private static void gpa(HttpExchange ex) throws IOException {
-        if (handleOptions(ex)) return;
+        if (!"GET".equals(ex.getRequestMethod())) {
+            sendError(ex, 405, "Method not allowed. Supported method: GET.");
+            return;
+        }
         try {
             Map<String, String> query = parseQuery(ex.getRequestURI().getRawQuery());
             int studentId = Integer.parseInt(query.getOrDefault("studentId", "").trim());
             send(ex, 200, json("studentId", studentId, "gpa", calculateDepartmentGpa(studentId)));
-        } catch (NumberFormatException e) { sendError(ex, 400, "Select a valid student."); }
-          catch (SQLException e) { sendError(ex, 500, "Database error: " + e.getMessage()); }
+        } catch (NumberFormatException e) {
+            sendError(ex, 400, "Select a valid student.");
+        } catch (SQLException e) {
+            System.err.println("GPA SQL error: " + e.getMessage());
+            sendError(ex, 500, "Internal server error. Please try again later.");
+        }
     }
 
-    // Attendance form accepts one student, date, course and status per submission.
+    // GET /api/attendance | POST /api/attendance (ADMIN ONLY)
     private static void attendance(HttpExchange ex) throws IOException {
-        if (handleOptions(ex)) return;
+        if (!"GET".equals(ex.getRequestMethod()) && !"POST".equals(ex.getRequestMethod())) {
+            sendError(ex, 405, "Method not allowed. Supported methods: GET, POST.");
+            return;
+        }
         if ("POST".equals(ex.getRequestMethod())) {
             Map<String, String> form = readForm(ex);
             try {
@@ -420,35 +516,111 @@ public class WebServer {
                 String courseCode = form.getOrDefault("courseCode", "").trim().toUpperCase();
                 attendance.markAttendance(studentId, courseCode, form.getOrDefault("date", ""), form.getOrDefault("status", ""));
                 send(ex, 201, json("message", "Attendance saved."));
-            } catch (InvalidAttendanceException e) { sendError(ex, 400, "Attendance error: " + e.getMessage()); }
-              catch (NumberFormatException e) { sendError(ex, 400, "Select a valid student."); }
-              catch (SQLException e) { sendError(ex, 500, "Database error: " + e.getMessage()); }
+            } catch (InvalidAttendanceException e) {
+                sendError(ex, 400, "Attendance error: " + e.getMessage());
+            } catch (NumberFormatException e) {
+                sendError(ex, 400, "Select a valid student.");
+            } catch (SQLException e) {
+                System.err.println("Attendance POST SQL error: " + e.getMessage());
+                sendError(ex, 500, "Internal server error. Please try again later.");
+            }
             return;
         }
         try {
             List<String> rows = new ArrayList<>();
-            for (AttendanceRecord a : attendance.getAll()) rows.add(json("attendanceId", a.getAttendanceId(), "studentId", a.getStudentId(), "studentName", a.getStudentName(), "courseCode", a.getCourseCode(), "courseName", a.getCourseName(), "date", a.getAttendanceDate(), "status", a.getStatus()));
+            for (AttendanceRecord a : attendance.getAll()) {
+                rows.add(json("attendanceId", a.getAttendanceId(), "studentId", a.getStudentId(),
+                        "studentName", a.getStudentName(), "courseCode", a.getCourseCode(),
+                        "courseName", a.getCourseName(), "date", a.getAttendanceDate(),
+                        "status", a.getStatus()));
+            }
             send(ex, 200, array(rows));
-        } catch (SQLException e) { sendError(ex, 500, "Database error: " + e.getMessage()); }
+        } catch (SQLException e) {
+            System.err.println("Attendance GET SQL error: " + e.getMessage());
+            sendError(ex, 500, "Internal server error. Please try again later.");
+        }
     }
 
-    // ===================== STATIC FRONTEND FILES =====================
+    // ===================== STATIC & HTML ROUTE PROTECTION =====================
 
     private static void staticFile(HttpExchange ex) throws IOException {
         String path = ex.getRequestURI().getPath();
-        if (path.equals("/")) path = "/index.html";
+        UserAccount user = auth.getUser(sessionToken(ex));
 
-        // Dashboard needs login; the login page is skipped when already logged in.
-        boolean loggedIn = auth.getUser(sessionToken(ex)) != null;
-        if (path.equals("/index.html") && !loggedIn) { redirect(ex, "/login.html"); return; }
-        if (path.equals("/login.html") && loggedIn) { redirect(ex, "/"); return; }
-        Path file = FRONTEND.resolve(path.substring(1)).normalize();
+        // 1. Root route: redirect based on authoritative role
+        if (path.equals("/")) {
+            if (user == null) {
+                redirect(ex, "/login.html");
+                return;
+            }
+            if (user.getRole() == Role.ADMIN) {
+                redirect(ex, "/index.html");
+                return;
+            }
+            if (user.getRole() == Role.STUDENT) {
+                redirect(ex, "/student.html");
+                return;
+            }
+        }
+
+        // 2. Admin dashboard route (/index.html)
+        if (path.equals("/index.html")) {
+            if (user == null) {
+                redirect(ex, "/login.html");
+                return;
+            }
+            if (user.getRole() != Role.ADMIN) {
+                sendError(ex, 403, "Access denied: Administrator privileges required to access the admin dashboard.");
+                return;
+            }
+        }
+
+        // 3. Student dashboard route (/student.html)
+        if (path.equals("/student.html")) {
+            if (user == null) {
+                redirect(ex, "/login.html");
+                return;
+            }
+            Path studentFile = FRONTEND.resolve("student.html").normalize();
+            if (!Files.isRegularFile(studentFile)) {
+                // Graceful fallback while student dashboard is under development (Phase 4)
+                String html = "<!doctype html><html><head><meta charset='utf-8'><title>CampusFlow | Student Portal</title>"
+                        + "<link rel='stylesheet' href='/style.css'></head><body style='display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;'>"
+                        + "<div style='text-align:center;padding:48px;background:#fff;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,0.08);max-width:440px;'>"
+                        + "<h2 style='margin-top:0;color:#292640;'>Student Portal</h2>"
+                        + "<p style='color:#666;'>Welcome, <strong>" + escapeHtml(user.getFullName()) + "</strong>.<br>The dedicated Student Dashboard is scheduled for Phase 4 deployment.</p>"
+                        + "<p style='font-size:12px;color:#89869f;'>Role: STUDENT | Student ID: " + (user.getStudentId() == null ? "Not linked" : user.getStudentId()) + "</p>"
+                        + "<button onclick='fetch(\"/api/auth/logout\",{method:\"POST\"}).then(()=>location.href=\"/login.html\");' class='primary-button' style='margin-top:16px;'>Sign out</button>"
+                        + "</div></body></html>";
+                sendText(ex, 200, "text/html; charset=utf-8", html);
+                return;
+            }
+        }
+
+        // 4. Login page route (/login.html)
+        if (path.equals("/login.html") && user != null) {
+            redirect(ex, user.getRole() == Role.ADMIN ? "/index.html" : "/student.html");
+            return;
+        }
+
+        // 5. General static file resolution (CSS, JS, images, sample PDFs)
+        Path file = FRONTEND.resolve(path.startsWith("/") ? path.substring(1) : path).normalize();
 
         // Security: never serve files outside the frontend folder.
         if (!file.startsWith(FRONTEND) || !Files.isRegularFile(file)) {
             sendText(ex, 404, "text/plain; charset=utf-8", "Not found");
             return;
         }
+
+        // Secondary check: prevent direct file loading of index.html by non-admins
+        if (file.getFileName().toString().equals("index.html")) {
+            if (user == null) { redirect(ex, "/login.html"); return; }
+            if (user.getRole() != Role.ADMIN) {
+                sendError(ex, 403, "Access denied: Administrator privileges required.");
+                return;
+            }
+        }
+
         String name = file.getFileName().toString();
         String type = name.endsWith(".html") ? "text/html; charset=utf-8"
                 : name.endsWith(".css") ? "text/css; charset=utf-8"
@@ -465,18 +637,20 @@ public class WebServer {
         }
     }
 
-    // ===================== HELPERS =====================
+    // ===================== SECURITY & HELPERS =====================
 
-    // Wraps an API handler so it only runs for a logged-in user.
-    private static HttpHandler secured(HttpHandler handler) {
-        return ex -> {
-            if (handleOptions(ex)) return;
-            if (auth.getUser(sessionToken(ex)) == null) {
-                sendError(ex, 401, "Please log in first.");
-                return;
-            }
-            handler.handle(ex);
-        };
+    private static boolean isCookieSecure() {
+        return "true".equalsIgnoreCase(System.getenv("COOKIE_SECURE"));
+    }
+
+    private static String sessionCookieHeader(String token) {
+        return SESSION_COOKIE + "=" + token + "; Path=/; HttpOnly; SameSite=Lax"
+                + (isCookieSecure() ? "; Secure" : "");
+    }
+
+    private static String expiredCookieHeader() {
+        return SESSION_COOKIE + "=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax"
+                + (isCookieSecure() ? "; Secure" : "");
     }
 
     // Reads the session token from the "Cookie" header.
@@ -490,9 +664,16 @@ public class WebServer {
         return null;
     }
 
+    // Never exposes password hashes, salts, or session tokens.
     private static String userJson(UserAccount user) {
-        return json("userId", user.getUserId(), "fullName", user.getFullName(),
-                "username", user.getUsername(), "email", user.getEmail());
+        return json(
+                "userId", user.getUserId(),
+                "fullName", user.getFullName(),
+                "username", user.getUsername(),
+                "email", user.getEmail(),
+                "role", user.getRole().name(),
+                "studentId", user.getStudentId()
+        );
     }
 
     private static void redirect(HttpExchange ex, String location) throws IOException {
@@ -511,12 +692,11 @@ public class WebServer {
         return names;
     }
 
-    // Allows the page to be opened directly as a file (file://) and still call the API.
+    // Handles preflight OPTIONS requests without leaking wildcard cross-origin access.
+    // Prefers same-origin requests.
     private static boolean handleOptions(HttpExchange ex) throws IOException {
-        ex.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-        ex.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-        ex.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
         if ("OPTIONS".equals(ex.getRequestMethod())) {
+            ex.getResponseHeaders().set("Allow", "GET, POST, OPTIONS");
             ex.sendResponseHeaders(204, -1);
             ex.close();
             return true;
@@ -524,7 +704,7 @@ public class WebServer {
         return false;
     }
 
-    // Reads "a=1&b=2" (form data) sent by the browser.
+    // Reads form data sent by client
     private static Map<String, String> readForm(HttpExchange ex) throws IOException {
         try (InputStream in = ex.getRequestBody()) {
             return parseQuery(new String(in.readAllBytes(), StandardCharsets.UTF_8));
@@ -541,6 +721,11 @@ public class WebServer {
             values.put(key, value);
         }
         return values;
+    }
+
+    private static String escapeHtml(String text) {
+        if (text == null) return "";
+        return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
     }
 
     // Builds a JSON object from key/value pairs: json("a", 1, "b", "x") -> {"a":1,"b":"x"}
