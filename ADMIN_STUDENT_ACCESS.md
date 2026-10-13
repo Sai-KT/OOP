@@ -148,7 +148,6 @@ CampusFlow provides completely isolated portals and dedicated sign-in pages to g
 | **Grades** | Enter and modify departmental marks | View published departmental grades & GPA |
 | **Account Access** | Link and unlink student accounts | N/A (hidden) |
 | **Reports** | Institution-wide enrollment & performance reports | N/A (hidden) |
-| **Portal Gateway** | `/login.html` acts as a role selector gateway linking to both dedicated portals | `/login.html` acts as a role selector gateway linking to both dedicated portals |
 
 ---
 
@@ -218,8 +217,8 @@ java -cp "target/classes:$(cat cp.txt)" com.studentmanagement.WebServer
 ```
 
 ### 3. Open Dashboards & Dedicated Portals
-- **Portal Selection Gateway**: `http://localhost:8080/login.html`
 - **Administrator Login Page**: `http://localhost:8080/admin-login.html` (strictly for ADMIN accounts)
 - **Administrator Dashboard**: `http://localhost:8080/index.html` (403 for students, redirects unauthenticated to admin-login)
 - **Student Login & Registration**: `http://localhost:8080/student-login.html` (strictly for STUDENT accounts)
 - **Student Academic Portal**: `http://localhost:8080/student.html` (redirects unauthenticated to student-login)
+- **Root URL**: `http://localhost:8080/` (forwards unauthenticated users to `/student-login.html` and authenticated users to their respective dashboard)

@@ -260,6 +260,16 @@ public class RbacIntegrationTest {
         HttpResponse rAnonStudent = request("GET", "/student.html", null, null);
         assertEquals(302, rAnonStudent.status, "Unauthenticated user accessing student.html must be redirected");
         assertEquals("/student-login.html", rAnonStudent.getLocation(), "Redirect destination must be /student-login.html");
+
+        // 12. GET / as anonymous user redirects to /student-login.html
+        HttpResponse rAnonRoot = request("GET", "/", null, null);
+        assertEquals(302, rAnonRoot.status);
+        assertEquals("/student-login.html", rAnonRoot.getLocation());
+
+        // 13. GET /login.html as anonymous user redirects to /student-login.html
+        HttpResponse rAnonLogin = request("GET", "/login.html", null, null);
+        assertEquals(302, rAnonLogin.status);
+        assertEquals("/student-login.html", rAnonLogin.getLocation());
     }
 
     @Test

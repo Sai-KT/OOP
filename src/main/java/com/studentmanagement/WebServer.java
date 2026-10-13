@@ -867,7 +867,7 @@ public class WebServer {
         // 1. Root route: redirect based on authoritative role
         if (path.equals("/")) {
             if (user == null) {
-                redirect(ex, "/login.html");
+                redirect(ex, "/student-login.html");
                 return;
             }
             if (user.getRole() == Role.ADMIN) {
@@ -938,8 +938,12 @@ public class WebServer {
             return;
         }
 
-        // 7. General login gateway route (/login.html)
-        if (path.equals("/login.html") && user != null) {
+        // 7. Legacy /login.html route redirects directly to /student-login.html
+        if (path.equals("/login.html")) {
+            if (user == null) {
+                redirect(ex, "/student-login.html");
+                return;
+            }
             redirect(ex, user.getRole() == Role.ADMIN ? "/index.html" : "/student.html");
             return;
         }
