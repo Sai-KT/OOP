@@ -20,7 +20,7 @@ function showMessage(id, text, success = false, isAdminAttempt = false) {
     node.innerHTML = `${icon}<div>`
       + `<div style="font-weight:700;">Administrator Account Detected</div>`
       + `<div style="margin-top:3px;font-size:12px;">${text}</div>`
-      + `<div style="margin-top:8px;"><a href="/admin-login.html" style="color:#0284c7;font-weight:700;text-decoration:underline;">Click here to sign in via the Admin Console &rarr;</a></div>`
+      + `<div style="margin-top:8px;"><a href="/admin-login.html" style="color:#0284c7;font-weight:700;text-decoration:underline;">Click here to sign in via Admin Console &rarr;</a></div>`
       + `</div>`;
   } else {
     node.innerHTML = `${icon}<div>${text}</div>`;
@@ -41,7 +41,7 @@ function setBusy(button, busy, label) {
 function setMode(signup) {
   isSignupMode = signup;
   
-  // Segmented tab active styles
+  // Tab active states
   $("tabSignIn").classList.toggle("active", !signup);
   $("tabRegister").classList.toggle("active", signup);
 
@@ -49,12 +49,11 @@ function setMode(signup) {
   $("studentLoginForm").classList.toggle("hidden", signup);
   $("studentSignupForm").classList.toggle("hidden", !signup);
 
-  // Headers
-  $("studentKicker").textContent = signup ? "New Student Registration" : "Student Access";
-  $("studentTitle").textContent = signup ? "Create Account" : "Student Portal";
-  $("studentSubtitle").textContent = signup
-    ? "Create your student login account. Your academic record will be linked by an administrator."
-    : "Sign in to view your courses, verified attendance, published grades, and calculated GPA.";
+  // Minimal headers
+  if ($("studentTitle")) $("studentTitle").textContent = signup ? "Create Account" : "Welcome Back";
+  if ($("studentSubtitle")) $("studentSubtitle").textContent = signup
+    ? "Register to access your student workspace"
+    : "Sign in to access your courses and grades";
 
   showMessage("studentLoginMessage", "");
   showMessage("studentSignupMessage", "");
@@ -104,7 +103,7 @@ function updateStrength() {
   const password = $("studentSignupPassword").value;
   const score = passwordScore(password);
   const labels = [
-    "Min 8 characters with upper, lower, numbers & symbols.",
+    "8+ characters recommended",
     "Weak password",
     "Fair password",
     "Good password",
@@ -156,7 +155,7 @@ $("studentLoginForm").addEventListener("submit", async event => {
     if (response.status === 403) {
       // Forbidden: administrator account attempted to sign in on student portal
       showMessage("studentLoginMessage", body.message || "This portal is strictly reserved for Students. Administrators must use the Admin Console.", false, true);
-      setBusy($("studentLoginSubmit"), false, "Sign in to Student Portal");
+      setBusy($("studentLoginSubmit"), false, "Sign In");
       return;
     }
 
@@ -164,13 +163,13 @@ $("studentLoginForm").addEventListener("submit", async event => {
       throw new Error(body.message || `Sign in failed (${response.status})`);
     }
 
-    showMessage("studentLoginMessage", "Signed in. Opening your student portal...", true);
+    showMessage("studentLoginMessage", "Signed in. Opening your portal...", true);
     setTimeout(() => {
       window.location.href = "/student.html";
     }, 400);
   } catch (error) {
     showMessage("studentLoginMessage", error.message || "Authentication failed.");
-    setBusy($("studentLoginSubmit"), false, "Sign in to Student Portal");
+    setBusy($("studentLoginSubmit"), false, "Sign In");
   }
 });
 
@@ -209,7 +208,7 @@ $("studentSignupForm").addEventListener("submit", async event => {
   } catch (error) {
     showMessage("studentSignupMessage", error.message);
   } finally {
-    setBusy($("studentSignupSubmit"), false, "Complete Registration");
+    setBusy($("studentSignupSubmit"), false, "Create Student Account");
   }
 });
 
