@@ -115,14 +115,33 @@ $("loginForm").addEventListener("submit", async event => {
 
   setBusy($("loginSubmit"), true, "Signing in...");
   try {
-    await post("login", { username, password });
+    const user = await post("login", { username, password });
     showMessage("loginMessage", "Signed in. Opening your dashboard...", true);
-    window.location.href = "/";
+    if (user && user.role === "STUDENT") {
+      window.location.href = "/student.html";
+    } else {
+      window.location.href = "/index.html";
+    }
   } catch (error) {
     showMessage("loginMessage", error.message);
     setBusy($("loginSubmit"), false, "Sign in");
   }
 });
+
+// Check if user is already logged in and redirect to their appropriate dashboard
+(async function checkExistingSession() {
+  try {
+    const response = await fetch("/api/auth/me");
+    if (response.ok) {
+      const user = await response.json();
+      if (user?.role === "STUDENT") {
+        window.location.href = "/student.html";
+      } else if (user?.role === "ADMIN") {
+        window.location.href = "/index.html";
+      }
+    }
+  } catch {}
+})();
 
 /* SIGN UP */
 $("signupForm").addEventListener("submit", async event => {

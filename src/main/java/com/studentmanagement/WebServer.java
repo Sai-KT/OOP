@@ -888,6 +888,10 @@ public class WebServer {
                 redirect(ex, "/login.html");
                 return;
             }
+            if (user.getRole() != Role.STUDENT) {
+                redirect(ex, "/index.html");
+                return;
+            }
             Path studentFile = FRONTEND.resolve("student.html").normalize();
             if (!Files.isRegularFile(studentFile)) {
                 // Graceful fallback while student dashboard is under development (Phase 4)

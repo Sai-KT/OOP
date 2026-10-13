@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CampusFlow | Student Portal</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="student.js" defer></script>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <a class="brand" href="#" data-page="overview">
+    <span class="brand-icon">C</span>
+    <span>Campus<span class="brand-light">Flow</span></span>
+  </a>
+  <p class="side-label">STUDENT PORTAL</p>
+  <nav class="navigation">
+    <button class="nav-item active" data-page="overview"><span class="nav-icon">▦</span><span class="nav-label">Overview</span></button>
+    <button class="nav-item" data-page="profile"><span class="nav-icon">👤</span><span class="nav-label">My Profile</span></button>
+    <button class="nav-item" data-page="courses"><span class="nav-icon">▤</span><span class="nav-label">My Courses</span><span id="navCoursesCount">0</span></button>
+    <button class="nav-item" data-page="attendance"><span class="nav-icon">◷</span><span class="nav-label">My Attendance</span><span id="navAttendanceRate">0%</span></button>
+    <button class="nav-item" data-page="grades"><span class="nav-icon">◎</span><span class="nav-label">My Grades &amp; GPA</span><span id="navGpaValue">0.0</span></button>
+  </nav>
+  <div class="sidebar-help">
+    <h3>Student Portal</h3>
+    <p>Secure read-only academic portal linked to your student record.</p>
+    <button id="supportBtn" class="text-button" type="button">Academic Support ↗</button>
+  </div>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main class="main-content">
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <button id="menuButton" class="menu-button" type="button" aria-label="Toggle navigation menu">☰</button>
+    <div class="breadcrumb">Student Portal / <strong id="breadcrumb">Overview</strong></div>
+    <div class="topbar-actions">
+      <span class="admin-avatar" id="userAvatar">S</span>
+      <span class="admin-name" id="userName">Student</span>
+      <span class="role-badge student-badge" id="userRoleBadge">STUDENT</span>
+      <button id="logoutButton" class="secondary-button logout-button" type="button">Log out</button>
+    </div>
+  </header>
+
+  <!-- UNLINKED ACCOUNT STATE (displayed if studentId is not linked yet) -->
+  <section id="unlinkedPage" class="page hidden">
+    <div class="unlinked-container">
+      <div class="unlinked-card">
+        <div class="unlinked-icon">⚠️</div>
+        <h2>Account Pending Verification</h2>
+        <p class="unlinked-text">Your account has not been linked to a student record yet. Please contact your administrator.</p>
+        <div class="unlinked-meta">
+          <div><span>Logged in as:</span> <strong id="unlinkedUserName">—</strong></div>
+          <div><span>Role:</span> <span class="role-badge student-badge">STUDENT</span></div>
+          <div><span>Record Status:</span> <span class="status-pill status-pending">Unlinked</span></div>
+        </div>
+        <div class="unlinked-actions">
+          <button id="unlinkedRefreshBtn" class="primary-button" type="button">↻ Check Link Status</button>
+          <button id="unlinkedLogoutBtn" class="secondary-button" type="button">Log out</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- OVERVIEW PAGE -->
+  <section id="overviewPage" class="page">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">ACADEMIC OVERVIEW</p>
+        <h1 id="greeting">Welcome ✦</h1>
+        <p class="subtitle" id="overviewSubtitle">Connecting to institutional records...</p>
+      </div>
+    </div>
+
+    <!-- STATS GRID -->
+    <div class="stats-grid">
+      <article class="stat-card">
+        <div class="stat-top">Enrolled Courses <span>▤</span></div>
+        <div class="stat-number" id="overviewCoursesCount">—</div>
+        <p class="stat-caption">Registered this semester</p>
+      </article>
+      <article class="stat-card">
+        <div class="stat-top">Overall Attendance <span>◷</span></div>
+        <div class="stat-number" id="overviewAttendance">—</div>
+        <p class="stat-caption" id="overviewAttendanceRatio">Verified classes attended</p>
+      </article>
+      <article class="stat-card">
+        <div class="stat-top">Cumulative GPA <span>◎</span></div>
+        <div class="stat-number" id="overviewGpa">—</div>
+        <p class="stat-caption">Department evaluation average</p>
+      </article>
+      <article class="stat-card">
+        <div class="stat-top">Academic Standing <span>✓</span></div>
+        <div class="stat-number" id="overviewStudentType" style="font-size:16px;text-transform:capitalize;">—</div>
+        <p class="stat-caption" id="overviewDepartmentShort">—</p>
+      </article>
+    </div>
+
+    <!-- DASHBOARD PANELS -->
+    <div class="dashboard-grid">
+      <!-- Current Registrations Quick View -->
+      <article class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>My Enrolled Courses</h2>
+            <p class="muted">Active registrations for current term</p>
+          </div>
+          <button class="text-button" data-goto="courses" type="button">View all courses →</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>COURSE</th>
+                <th>CODE</th>
+                <th>CREDITS</th>
+                <th>STATUS</th>
+              </tr>
+            </thead>
+            <tbody id="overviewCoursesBody"></tbody>
+          </table>
+        </div>
+        <p id="overviewCoursesEmpty" class="empty-state hidden">No courses enrolled yet.</p>
+      </article>
+
+      <!-- Attendance & Guidance Quick View -->
+      <article class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Attendance &amp; Progress</h2>
+            <p class="muted">Live summary from MySQL</p>
+          </div>
+          <button class="text-button" data-goto="attendance" type="button">Attendance log →</button>
+        </div>
+        <div class="breakdown">
+          <div>
+            <div class="year-row-label">
+              <span>Attendance Rate</span>
+              <strong id="overviewAttendancePercent">0%</strong>
+            </div>
+            <div class="year-track">
+              <span id="overviewAttendanceBar" style="width: 0%;"></span>
+            </div>
+          </div>
+        </div>
+        <div class="guidance-box" id="overviewGuidanceBox" style="margin-top:22px;">
+          <span class="guidance-icon">💡</span>
+          <div>
+            <strong>Guidance:</strong>
+            <span id="overviewGuidanceText">No special advisory for your current program.</span>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- MY PROFILE PAGE -->
+  <section id="profilePage" class="page hidden">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">ACADEMIC IDENTITY</p>
+        <h1>My Profile</h1>
+        <p class="subtitle">Official student credentials and academic enrollment details.</p>
+      </div>
+    </div>
+
+    <article class="panel">
+      <div class="panel-heading">
+        <div>
+          <h2>Student Information</h2>
+          <p class="muted">Official institutional record (read-only)</p>
+        </div>
+      </div>
+
+      <div class="profile-grid">
+        <div class="profile-field">
+          <span class="profile-field-label">Student ID</span>
+          <span class="profile-field-value"><span id="profileStudentId">—</span><span class="read-only-badge">🔒 Read-only</span></span>
+        </div>
+        <div class="profile-field">
+          <span class="profile-field-label">Full Name</span>
+          <span class="profile-field-value"><span id="profileName">—</span></span>
+        </div>
+        <div class="profile-field">
+          <span class="profile-field-label">Institutional Email</span>
+          <span class="profile-field-value"><span id="profileEmail">—</span></span>
+        </div>
+        <div class="profile-field">
+          <span class="profile-field-label">Department</span>
+          <span class="profile-field-value"><span id="profileDepartment">—</span></span>
+        </div>
+        <div class="profile-field">
+          <span class="profile-field-label">Current Semester</span>
+          <span class="profile-field-value"><span id="profileSemester">—</span></span>
+        </div>
+        <div class="profile-field">
+          <span class="profile-field-label">Student Classification</span>
+          <span class="profile-field-value"><span id="profileType">—</span></span>
+        </div>
+        <div class="profile-field">
+          <span class="profile-field-label">Cumulative GPA</span>
+          <span class="profile-field-value"><span id="profileGpa">—</span></span>
+        </div>
+        <div class="profile-field">
+          <span class="profile-field-label">Academic Status</span>
+          <span class="profile-field-value"><span class="status-pill status-active">Active Good Standing</span></span>
+        </div>
+      </div>
+
+      <div class="guidance-box" style="margin-top:24px;">
+        <span class="guidance-icon">ℹ</span>
+        <div>
+          <strong>Program Guidance:</strong>
+          <span id="profileGuidanceText">—</span>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- MY COURSES PAGE -->
+  <section id="coursesPage" class="page hidden">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">ACADEMIC REGISTRATION</p>
+        <h1>My Courses</h1>
+        <p class="subtitle">Courses for which you are registered in the current term.</p>
+      </div>
+    </div>
+
+    <article class="panel">
+      <div class="filter-bar">
+        <input id="coursesSearch" type="search" placeholder="Filter courses by code or name...">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>COURSE CODE</th>
+              <th>COURSE NAME</th>
+              <th>CREDITS</th>
+              <th>PREREQUISITE</th>
+              <th>CAPACITY</th>
+              <th>STATUS</th>
+            </tr>
+          </thead>
+          <tbody id="coursesTableBody"></tbody>
+        </table>
+      </div>
+      <p id="coursesEmpty" class="empty-state hidden">No enrolled courses found.</p>
+    </article>
+  </section>
+
+  <!-- MY ATTENDANCE PAGE -->
+  <section id="attendancePage" class="page hidden">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">ATTENDANCE MONITORING</p>
+        <h1>My Attendance</h1>
+        <p class="subtitle">Verified classroom attendance records and calculation breakdown.</p>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <article class="stat-card">
+        <div class="stat-top">Overall Attendance <span>◷</span></div>
+        <div class="stat-number" id="attRateStat">—</div>
+        <p class="stat-caption">Present + Late percentage</p>
+      </article>
+      <article class="stat-card">
+        <div class="stat-top">Present Sessions <span>✓</span></div>
+        <div class="stat-number" id="attPresentCount">0</div>
+        <p class="stat-caption">On-time classroom attendance</p>
+      </article>
+      <article class="stat-card">
+        <div class="stat-top">Late Sessions <span>◷</span></div>
+        <div class="stat-number" id="attLateCount">0</div>
+        <p class="stat-caption">Recorded as late</p>
+      </article>
+      <article class="stat-card">
+        <div class="stat-top">Absent Sessions <span>✗</span></div>
+        <div class="stat-number" id="attAbsentCount">0</div>
+        <p class="stat-caption">Missed classroom sessions</p>
+      </article>
+    </div>
+
+    <article class="panel">
+      <div class="filter-bar">
+        <input id="attendanceSearch" type="search" placeholder="Search by course code or name...">
+        <select id="attendanceStatusFilter">
+          <option value="all">All statuses</option>
+          <option value="PRESENT">Present only</option>
+          <option value="LATE">Late only</option>
+          <option value="ABSENT">Absent only</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>DATE</th>
+              <th>COURSE CODE</th>
+              <th>COURSE NAME</th>
+              <th>ATTENDANCE STATUS</th>
+            </tr>
+          </thead>
+          <tbody id="attendanceTableBody"></tbody>
+        </table>
+      </div>
+      <p id="attendanceEmpty" class="empty-state hidden">No attendance records found.</p>
+    </article>
+  </section>
+
+  <!-- MY GRADES PAGE -->
+  <section id="gradesPage" class="page hidden">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">ACADEMIC PERFORMANCE</p>
+        <h1>My Grades &amp; GPA</h1>
+        <p class="subtitle">Official department-based evaluation marks and calculated GPA.</p>
+      </div>
+    </div>
+
+    <div class="stats-grid three">
+      <article class="stat-card">
+        <div class="stat-top">Cumulative GPA <span>◎</span></div>
+        <div class="stat-number" id="gradesGpaBig">—</div>
+        <p class="stat-caption">Calculated by Java backend</p>
+      </article>
+      <article class="stat-card">
+        <div class="stat-top">Evaluated Departments <span>▦</span></div>
+        <div class="stat-number" id="gradesSubjectCount">0</div>
+        <p class="stat-caption">Graded curriculum subjects</p>
+      </article>
+      <article class="stat-card">
+        <div class="stat-top">Passing Status <span>✓</span></div>
+        <div class="stat-number" id="gradesPassStatus">—</div>
+        <p class="stat-caption">Minimum 40.0 passing threshold</p>
+      </article>
+    </div>
+
+    <article class="panel">
+      <div class="panel-heading">
+        <div>
+          <h2>Departmental Grades</h2>
+          <p class="muted">Grades recorded by academic departments in MySQL</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>DEPARTMENT ID</th>
+              <th>DEPARTMENT NAME</th>
+              <th>MARKS</th>
+              <th>RESULT</th>
+            </tr>
+          </thead>
+          <tbody id="gradesTableBody"></tbody>
+        </table>
+      </div>
+      <p id="gradesEmpty" class="empty-state hidden">No grades recorded yet.</p>
+      <div class="info-banner" style="margin-top:16px;">
+        <strong>GPA Calculation Notice:</strong> Cumulative GPA is calculated by the Java backend using the average marks obtained across all evaluated departments.
+      </div>
+    </article>
+  </section>
+</main>
+
+<!-- SUPPORT MODAL -->
+<div id="supportModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h2>Academic Support &amp; Information</h2>
+        <p class="muted">CampusFlow Student Help Desk</p>
+      </div>
+      <button id="closeSupportBtn" class="close-button" type="button" aria-label="Close">✕</button>
+    </div>
+    <div style="padding: 16px 0; line-height: 1.6; font-size: 13px; color: var(--ink);">
+      <p>Welcome to the <strong>CampusFlow Student Portal</strong>. This portal provides real-time, read-only access to your official student records stored in MySQL.</p>
+      <div style="background:#f7f5ff; border:1px solid #e9e5ff; border-radius:10px; padding:14px; margin:14px 0;">
+        <p style="margin:0 0 6px;"><strong>Need to correct your records?</strong></p>
+        <p style="margin:0; color:var(--muted); font-size:12px;">Contact your department administrator or the Academic Registrar's Office to update your personal details, course registrations, attendance, or grades.</p>
+      </div>
+      <p style="margin:0; font-size:12px; color:var(--muted);">Security: All requests are authenticated via secure server-side HTTP cookies.</p>
+    </div>
+    <div class="modal-actions" style="margin-top: 10px;">
+      <button id="closeSupportBtn2" class="primary-button" type="button" style="width: 100%;">Understood</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+</body>
+</html>
