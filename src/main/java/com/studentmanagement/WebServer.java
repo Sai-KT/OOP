@@ -202,13 +202,23 @@ public class WebServer {
         }
     }
 
-    // POST /api/auth/login (username = username or email, password)
+    // POST /api/auth/login (username = username or email, password, optional portal = ADMIN | STUDENT)
     private static void login(HttpExchange ex) throws IOException {
         if (handleOptions(ex)) return;
         if (!"POST".equals(ex.getRequestMethod())) { sendError(ex, 405, "Method not allowed. Supported method: POST."); return; }
         Map<String, String> form = readForm(ex);
+        String portal = form.getOrDefault("portal", "").trim().toUpperCase();
         try {
             UserAccount user = auth.login(form.getOrDefault("username", "").trim(), form.getOrDefault("password", ""));
+            // Strict portal role validation: prevent students on admin login and admins on student login
+            if ("ADMIN".equals(portal) && user.getRole() != Role.ADMIN) {
+                sendError(ex, 403, "Access denied: This portal is strictly reserved for Administrators. Student accounts cannot sign in through the Admin Console.");
+                return;
+            }
+            if ("STUDENT".equals(portal) && user.getRole() != Role.STUDENT) {
+                sendError(ex, 403, "Access denied: This portal is strictly reserved for Students. Administrators must sign in through the Admin Console.");
+                return;
+            }
             String token = auth.createSession(user);
             ex.getResponseHeaders().add("Set-Cookie", sessionCookieHeader(token));
             send(ex, 200, userJson(user));
@@ -870,10 +880,10 @@ public class WebServer {
             }
         }
 
-        // 2. Admin dashboard route (/index.html)
+        // 2. Admin dashboard route (/index.html) - strictly ADMIN only
         if (path.equals("/index.html")) {
             if (user == null) {
-                redirect(ex, "/login.html");
+                redirect(ex, "/admin-login.html");
                 return;
             }
             if (user.getRole() != Role.ADMIN) {
@@ -882,10 +892,18 @@ public class WebServer {
             }
         }
 
-        // 3. Student dashboard route (/student.html)
+        // 3. Admin script protection (/script.js) - prevent students from loading admin control scripts
+        if (path.equals("/script.js")) {
+            if (user != null && user.getRole() != Role.ADMIN) {
+                sendError(ex, 403, "Access denied: Administrator resources are restricted.");
+                return;
+            }
+        }
+
+        // 4. Student dashboard route (/student.html) - strictly STUDENT only
         if (path.equals("/student.html")) {
             if (user == null) {
-                redirect(ex, "/login.html");
+                redirect(ex, "/student-login.html");
                 return;
             }
             if (user.getRole() != Role.STUDENT) {
@@ -894,27 +912,39 @@ public class WebServer {
             }
             Path studentFile = FRONTEND.resolve("student.html").normalize();
             if (!Files.isRegularFile(studentFile)) {
-                // Graceful fallback while student dashboard is under development (Phase 4)
+                // Graceful fallback while student dashboard is under development
                 String html = "<!doctype html><html><head><meta charset='utf-8'><title>CampusFlow | Student Portal</title>"
                         + "<link rel='stylesheet' href='/style.css'></head><body style='display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;'>"
                         + "<div style='text-align:center;padding:48px;background:#fff;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,0.08);max-width:440px;'>"
                         + "<h2 style='margin-top:0;color:#292640;'>Student Portal</h2>"
-                        + "<p style='color:#666;'>Welcome, <strong>" + escapeHtml(user.getFullName()) + "</strong>.<br>The dedicated Student Dashboard is scheduled for Phase 4 deployment.</p>"
+                        + "<p style='color:#666;'>Welcome, <strong>" + escapeHtml(user.getFullName()) + "</strong>.</p>"
                         + "<p style='font-size:12px;color:#89869f;'>Role: STUDENT | Student ID: " + (user.getStudentId() == null ? "Not linked" : user.getStudentId()) + "</p>"
-                        + "<button onclick='fetch(\"/api/auth/logout\",{method:\"POST\"}).then(()=>location.href=\"/login.html\");' class='primary-button' style='margin-top:16px;'>Sign out</button>"
+                        + "<button onclick='fetch(\"/api/auth/logout\",{method:\"POST\"}).then(()=>location.href=\"/student-login.html\");' class='primary-button' style='margin-top:16px;'>Sign out</button>"
                         + "</div></body></html>";
                 sendText(ex, 200, "text/html; charset=utf-8", html);
                 return;
             }
         }
 
-        // 4. Login page route (/login.html)
+        // 5. Admin login route (/admin-login.html)
+        if (path.equals("/admin-login.html") && user != null) {
+            redirect(ex, user.getRole() == Role.ADMIN ? "/index.html" : "/student.html");
+            return;
+        }
+
+        // 6. Student login route (/student-login.html)
+        if (path.equals("/student-login.html") && user != null) {
+            redirect(ex, user.getRole() == Role.STUDENT ? "/student.html" : "/index.html");
+            return;
+        }
+
+        // 7. General login gateway route (/login.html)
         if (path.equals("/login.html") && user != null) {
             redirect(ex, user.getRole() == Role.ADMIN ? "/index.html" : "/student.html");
             return;
         }
 
-        // 5. General static file resolution (CSS, JS, images, sample PDFs)
+        // 8. General static file resolution (CSS, JS, images, sample PDFs)
         Path file = FRONTEND.resolve(path.startsWith("/") ? path.substring(1) : path).normalize();
 
         // Security: never serve files outside the frontend folder.
@@ -925,11 +955,25 @@ public class WebServer {
 
         // Secondary check: prevent direct file loading of index.html by non-admins
         if (file.getFileName().toString().equals("index.html")) {
-            if (user == null) { redirect(ex, "/login.html"); return; }
+            if (user == null) { redirect(ex, "/admin-login.html"); return; }
             if (user.getRole() != Role.ADMIN) {
                 sendError(ex, 403, "Access denied: Administrator privileges required.");
                 return;
             }
+        }
+
+        // Secondary check: prevent direct file loading of script.js by students
+        if (file.getFileName().toString().equals("script.js")) {
+            if (user != null && user.getRole() != Role.ADMIN) {
+                sendError(ex, 403, "Access denied: Administrator resources are restricted.");
+                return;
+            }
+        }
+
+        // Secondary check: student.html redirect if anonymous
+        if (file.getFileName().toString().equals("student.html")) {
+            if (user == null) { redirect(ex, "/student-login.html"); return; }
+            if (user.getRole() != Role.STUDENT) { redirect(ex, "/index.html"); return; }
         }
 
         String name = file.getFileName().toString();

@@ -148,6 +148,27 @@ public class RbacIntegrationTest {
         assertEquals(200, logoutRes.status);
         HttpResponse afterLogout = request("GET", "/api/auth/me", null, studentCookie);
         assertEquals(401, afterLogout.status, "Logged out token must return 401 Unauthorized");
+
+        // 5. Portal segregation: Student attempting to log in via Admin Portal (portal=ADMIN) is rejected with 403
+        HttpResponse studentOnAdminPortal = request("POST", "/api/auth/login",
+                Map.of("username", "raj101", "password", "StudentPass123!", "portal", "ADMIN"), null);
+        assertEquals(403, studentOnAdminPortal.status, "Student attempting to sign in on Admin portal must be rejected with 403");
+        assertTrue(studentOnAdminPortal.body.contains("strictly reserved for Administrators"));
+
+        // 6. Portal segregation: Admin attempting to log in via Student Portal (portal=STUDENT) is rejected with 403
+        HttpResponse adminOnStudentPortal = request("POST", "/api/auth/login",
+                Map.of("username", "sysadmin", "password", "AdminPass123!", "portal", "STUDENT"), null);
+        assertEquals(403, adminOnStudentPortal.status, "Admin attempting to sign in on Student portal must be rejected with 403");
+        assertTrue(adminOnStudentPortal.body.contains("strictly reserved for Students"));
+
+        // 7. Legitimate portal logins succeed
+        HttpResponse adminOnAdminPortal = request("POST", "/api/auth/login",
+                Map.of("username", "sysadmin", "password", "AdminPass123!", "portal", "ADMIN"), null);
+        assertEquals(200, adminOnAdminPortal.status);
+
+        HttpResponse studentOnStudentPortal = request("POST", "/api/auth/login",
+                Map.of("username", "raj101", "password", "StudentPass123!", "portal", "STUDENT"), null);
+        assertEquals(200, studentOnStudentPortal.status);
     }
 
     @Test
@@ -226,10 +247,19 @@ public class RbacIntegrationTest {
         HttpResponse r8 = request("GET", "/index.html", null, studentCookie);
         assertEquals(403, r8.status, "Student attempting to load index.html must be blocked with 403");
 
-        // 9. GET /index.html as anonymous user redirects to /login.html
-        HttpResponse rAnon = request("GET", "/index.html", null, null);
-        assertEquals(302, rAnon.status, "Unauthenticated user accessing index.html must be redirected");
-        assertEquals("/login.html", rAnon.getLocation(), "Redirect destination must be /login.html");
+        // 9. GET /script.js (admin controller script)
+        HttpResponse rScript = request("GET", "/script.js", null, studentCookie);
+        assertEquals(403, rScript.status, "Student attempting to load script.js must be blocked with 403");
+
+        // 10. GET /index.html as anonymous user redirects to /admin-login.html
+        HttpResponse rAnonAdmin = request("GET", "/index.html", null, null);
+        assertEquals(302, rAnonAdmin.status, "Unauthenticated user accessing index.html must be redirected");
+        assertEquals("/admin-login.html", rAnonAdmin.getLocation(), "Redirect destination must be /admin-login.html");
+
+        // 11. GET /student.html as anonymous user redirects to /student-login.html
+        HttpResponse rAnonStudent = request("GET", "/student.html", null, null);
+        assertEquals(302, rAnonStudent.status, "Unauthenticated user accessing student.html must be redirected");
+        assertEquals("/student-login.html", rAnonStudent.getLocation(), "Redirect destination must be /student-login.html");
     }
 
     @Test

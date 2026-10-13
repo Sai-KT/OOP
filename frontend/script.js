@@ -44,7 +44,7 @@ async function api(path, data) {
   let body = null;
   try { body = await response.json(); } catch {}
   if (response.status === 401 && !path.startsWith("/auth/")) {
-    window.location.href = "/login.html"; // session expired or not logged in
+    window.location.href = "/admin-login.html"; // session expired or not logged in
     throw new Error("Please log in first.");
   }
   if (!response.ok) throw new Error(body?.message || `Request failed (${response.status})`);
@@ -126,11 +126,11 @@ async function loadUser() {
   try {
     currentUser = await api("/auth/me");
   } catch {
-    window.location.href = "/login.html";
+    window.location.href = "/admin-login.html";
     return false;
   }
   if (!currentUser) {
-    window.location.href = "/login.html";
+    window.location.href = "/admin-login.html";
     return false;
   }
   if (currentUser.role === "STUDENT") {
@@ -151,7 +151,7 @@ async function loadUser() {
 
 $("logoutButton").addEventListener("click", async () => {
   try { await api("/auth/logout", {}); } catch {}
-  window.location.href = "/login.html";
+  window.location.href = "/admin-login.html";
 });
 
 /* NAVIGATION */

@@ -129,11 +129,16 @@ Choose menu option `11. Setup Administrator Account` to configure the credential
 
 ---
 
-## 5. Demonstrating the Two Dashboards
+## 5. Demonstrating the Separated Portals and Login Pages
 
-| Feature Area | Admin Dashboard (`/index.html`) | Student Portal (`/student.html`) |
+CampusFlow provides completely isolated portals and dedicated sign-in pages to guarantee role separation:
+
+| Feature Area | Admin Portal (`/index.html`) | Student Portal (`/student.html`) |
 |--------------|--------------------------------|----------------------------------|
-| **Target Role** | `ADMIN` only (403 for Students) | `STUDENT` only (302 for Admins) |
+| **Dedicated Login Page** | `/admin-login.html` | `/student-login.html` |
+| **Target Role** | `ADMIN` only (403 for Students) | `STUDENT` only (302/403 for Admins) |
+| **Login Isolation** | Rejects students with 403 Forbidden | Rejects administrators with 403 Forbidden |
+| **Direct Asset Access** | `/script.js` blocked with 403 for Students | `/student.js` available |
 | **Topbar Badge** | Purple `ADMIN` badge | Blue `STUDENT` badge |
 | **Overview** | Institution-wide metrics (all students, seats used, global attendance) | Personal metrics (enrolled courses, personal attendance %, cumulative GPA) |
 | **Students** | Add students, search all students, import PDFs, export CSV | Read-only personal academic profile |
@@ -143,6 +148,7 @@ Choose menu option `11. Setup Administrator Account` to configure the credential
 | **Grades** | Enter and modify departmental marks | View published departmental grades & GPA |
 | **Account Access** | Link and unlink student accounts | N/A (hidden) |
 | **Reports** | Institution-wide enrollment & performance reports | N/A (hidden) |
+| **Portal Gateway** | `/login.html` acts as a role selector gateway linking to both dedicated portals | `/login.html` acts as a role selector gateway linking to both dedicated portals |
 
 ---
 
@@ -211,7 +217,9 @@ mvn clean test
 java -cp "target/classes:$(cat cp.txt)" com.studentmanagement.WebServer
 ```
 
-### 3. Open Dashboards
-- **Login Portal**: `http://localhost:8080/login.html`
-- **Admin Dashboard**: `http://localhost:8080/index.html` (requires Admin credentials)
-- **Student Dashboard**: `http://localhost:8080/student.html` (requires Student credentials)
+### 3. Open Dashboards & Dedicated Portals
+- **Portal Selection Gateway**: `http://localhost:8080/login.html`
+- **Administrator Login Page**: `http://localhost:8080/admin-login.html` (strictly for ADMIN accounts)
+- **Administrator Dashboard**: `http://localhost:8080/index.html` (403 for students, redirects unauthenticated to admin-login)
+- **Student Login & Registration**: `http://localhost:8080/student-login.html` (strictly for STUDENT accounts)
+- **Student Academic Portal**: `http://localhost:8080/student.html` (redirects unauthenticated to student-login)

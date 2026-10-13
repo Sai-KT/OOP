@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CampusFlow | Admin Console Sign In</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="admin-login.js" defer></script>
+</head>
+<body>
+<div class="auth-screen">
+  <div class="auth-layout">
+
+    <!-- LEFT: Administrative security showcase -->
+    <aside class="auth-showcase" style="background: radial-gradient(ellipse at 14% 7%, rgba(112, 87, 232, 0.45), transparent 38%), radial-gradient(ellipse at 94% 90%, rgba(237, 112, 154, 0.2), transparent 35%), linear-gradient(150deg, #10132b 0%, #1a1e42 55%, #252857 100%);" aria-label="Administrator Console Introduction">
+      <a class="auth-showcase-brand" href="/admin-login.html">
+        <span class="brand-icon" style="background: linear-gradient(145deg, #7057e8, #523cc7);">🛡️</span>
+        <span>Campus<span class="brand-light">Flow</span> <small style="font-size:12px;opacity:0.8;font-weight:700;letter-spacing:1px;margin-left:6px;padding:3px 8px;border-radius:6px;background:rgba(255,255,255,0.12);">ADMIN</small></span>
+      </a>
+      <div class="showcase-content">
+        <span class="showcase-pill" style="border-color:rgba(180,165,255,0.3);color:#e2ddff;">
+          <span class="live-dot" style="background:#a594ff;box-shadow:0 0 0 4px rgba(165,148,255,0.25);"></span> RESTRICTED ACCESS — CONSOLE
+        </span>
+        <h2>Central Campus<br><span style="color:#c5bcff;">Administration.</span></h2>
+        <p>Administrative portal for authorized faculty and system managers. Oversee student records, academic departments, curriculum enrollments, attendance audits, and grading policies.</p>
+        
+        <div class="showcase-visual" style="border-color:rgba(255,255,255,0.15);" aria-hidden="true">
+          <div class="visual-topline">
+            <span>ADMINISTRATIVE SCOPE</span>
+            <span class="visual-status" style="color:#a594ff;">● SECURED</span>
+          </div>
+          <div class="visual-stat-row">
+            <div class="visual-stat">
+              <span class="visual-icon violet">👥</span>
+              <strong>Registry</strong>
+              <small>Student directories & accounts</small>
+            </div>
+            <div class="visual-stat">
+              <span class="visual-icon peach">⚖️</span>
+              <strong>Governance</strong>
+              <small>Audits, GPA & enrollments</small>
+            </div>
+          </div>
+          <div style="margin-top:14px;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,0.06);font-size:11px;color:#d2d5ec;display:flex;align-items:center;gap:10px;">
+            <span style="font-size:16px;">🔒</span>
+            <span>Zero-trust role authorization active. All operations require verified ADMIN credentials.</span>
+          </div>
+        </div>
+      </div>
+      <div class="showcase-footer">
+        <span>CampusFlow Management Suite · Admin</span>
+        <span>© CampusFlow</span>
+      </div>
+    </aside>
+
+    <!-- RIGHT: Admin sign-in panel -->
+    <main class="auth-panel">
+      <div class="auth-panel-top">
+        <span class="secure-label">
+          <span style="background:#ede8ff;color:#5b45d9;">🛡️</span> Admin Console Access
+        </span>
+        <span class="auth-step-label" style="color:#7057e8;">RESTRICTED AREA</span>
+      </div>
+
+      <section class="auth-card">
+        <div class="auth-mobile-brand">
+          <span class="brand-icon">🛡️</span>
+          <span>Campus<span class="brand-light">Flow</span> Admin</span>
+        </div>
+
+        <div class="auth-heading-mark" style="color:#7057e8;">
+          <span class="heading-mark-icon" style="background:#ede8ff;color:#5b45d9;border-color:#dcd4ff;">🛡️</span>
+          <span>ADMINISTRATOR SIGN IN</span>
+        </div>
+
+        <h1>Administrator Console</h1>
+        <p class="subtitle">Please provide your authorized administrator credentials to manage the campus system.</p>
+
+        <!-- SECURITY NOTICE BANNER -->
+        <div style="margin-top:18px;padding:11px 14px;border-radius:10px;background:#f6f4fe;border:1px solid #e3dcfa;color:#4a3f85;font-size:12px;line-height:1.5;display:flex;align-items:flex-start;gap:9px;">
+          <span style="font-size:15px;line-height:1;">ℹ️</span>
+          <div>This sign-in portal is strictly for <strong>Administrators</strong>. Student accounts are rejected here.</div>
+        </div>
+
+        <!-- ADMIN LOGIN FORM -->
+        <form id="adminLoginForm" class="auth-form" novalidate>
+          <label for="adminUsername">Admin username or email</label>
+          <div class="auth-input-wrap">
+            <span class="input-icon" aria-hidden="true">👤</span>
+            <input id="adminUsername" autocomplete="username" required placeholder="Enter admin username (e.g. sysadmin)">
+          </div>
+
+          <label for="adminPassword">Password</label>
+          <div class="auth-input-wrap">
+            <span class="input-icon" aria-hidden="true">🔑</span>
+            <input id="adminPassword" type="password" autocomplete="current-password" required placeholder="Enter admin password">
+            <button type="button" class="password-toggle" data-toggle-password="adminPassword" aria-label="Show password" aria-pressed="false">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path class="eye-open" d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/>
+                <circle class="eye-open" cx="12" cy="12" r="3"/>
+                <path class="eye-closed" d="M3 3l18 18M10.6 5.1A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.1 3.9M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2"/>
+              </svg>
+            </button>
+          </div>
+
+          <p class="caps-warning hidden" id="adminCaps">⚠ Caps Lock is on</p>
+          <p id="adminMessage" class="auth-message hidden" aria-live="polite"></p>
+
+          <button class="primary-button auth-submit" id="adminSubmit" type="submit" style="background:linear-gradient(100deg,#5d44d4,#7057e8);">
+            <span>Sign in to Admin Console</span>
+            <span aria-hidden="true">→</span>
+          </button>
+        </form>
+
+        <div class="auth-divider">
+          <span></span>
+          <small>PORTAL NAVIGATION</small>
+          <span></span>
+        </div>
+
+        <!-- QUICK PORTAL SWITCHER -->
+        <p class="auth-switch" style="margin-top:20px;">
+          Are you a student looking for your academic records?
+          <br>
+          <a href="/student-login.html" class="text-button" style="display:inline-flex;align-items:center;gap:5px;margin-top:6px;font-weight:750;color:#7057e8;text-decoration:none;">
+            <span>Go to Student Portal Login</span>
+            <span>↗</span>
+          </a>
+        </p>
+
+        <p class="auth-footnote">
+          <span aria-hidden="true">▣</span>
+          Sessions are encrypted and authenticated via server-side cryptographic tokens.
+        </p>
+      </section>
+
+      <p class="auth-panel-bottom">
+        Need administrator provisioning? Contact system operations or configure environment variables.
+      </p>
+    </main>
+  </div>
+</div>
+</body>
+</html>

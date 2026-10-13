@@ -54,7 +54,7 @@ async function api(path, data) {
   let body = null;
   try { body = await response.json(); } catch {}
   if (response.status === 401) {
-    window.location.href = "/login.html";
+    window.location.href = "/student-login.html";
     throw new Error("Session expired. Please log in again.");
   }
   if (!response.ok) {
@@ -70,12 +70,12 @@ async function loadUser() {
   try {
     currentUser = await api("/auth/me");
   } catch (error) {
-    window.location.href = "/login.html";
+    window.location.href = "/student-login.html";
     return false;
   }
 
   if (!currentUser) {
-    window.location.href = "/login.html";
+    window.location.href = "/student-login.html";
     return false;
   }
 
@@ -394,7 +394,7 @@ function setupEvents() {
   // Logout actions
   const doLogout = async () => {
     try { await api("/auth/logout", {}); } catch {}
-    window.location.href = "/login.html";
+    window.location.href = "/student-login.html";
   };
 
   $("logoutButton")?.addEventListener("click", doLogout);

@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CampusFlow | Student Portal Sign In</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="student-login.js" defer></script>
+</head>
+<body>
+<div class="auth-screen">
+  <div class="auth-layout">
+
+    <!-- LEFT: Student academic showcase -->
+    <aside class="auth-showcase" style="background: radial-gradient(ellipse at 14% 7%, rgba(0, 112, 243, 0.4), transparent 38%), radial-gradient(ellipse at 94% 90%, rgba(32, 181, 139, 0.25), transparent 35%), linear-gradient(150deg, #101c36 0%, #172449 55%, #1d335f 100%);" aria-label="Student Portal Introduction">
+      <a class="auth-showcase-brand" href="/student-login.html">
+        <span class="brand-icon" style="background: linear-gradient(145deg, #0070f3, #0056b3);">🎓</span>
+        <span>Campus<span class="brand-light">Flow</span> <small style="font-size:12px;opacity:0.85;font-weight:700;letter-spacing:1px;margin-left:6px;padding:3px 8px;border-radius:6px;background:rgba(255,255,255,0.12);">STUDENT</small></span>
+      </a>
+      <div class="showcase-content">
+        <span class="showcase-pill" style="border-color:rgba(140,205,255,0.3);color:#d4edff;">
+          <span class="live-dot" style="background:#52c41a;box-shadow:0 0 0 4px rgba(82,196,26,0.25);"></span> STUDENT ACADEMIC PORTAL
+        </span>
+        <h2>Your academic journey,<br><span style="color:#79c0ff;">all in one place.</span></h2>
+        <p>Your personal student space. Access your course enrollments, real-time attendance percentages, published subject marks, and semester-wise GPA calculations.</p>
+        
+        <div class="showcase-visual" style="border-color:rgba(255,255,255,0.15);" aria-hidden="true">
+          <div class="visual-topline">
+            <span>MY ACADEMIC RECORD</span>
+            <span class="visual-status" style="color:#69c0ff;">● ACTIVE</span>
+          </div>
+          <div class="visual-stat-row">
+            <div class="visual-stat">
+              <span class="visual-icon violet" style="background:rgba(0,112,243,0.2);color:#91caff;">📚</span>
+              <strong>Courses</strong>
+              <small>Curriculum & enrollments</small>
+            </div>
+            <div class="visual-stat">
+              <span class="visual-icon peach" style="background:rgba(32,181,139,0.2);color:#87e8de;">📊</span>
+              <strong>Performance</strong>
+              <small>Attendance & GPA tracker</small>
+            </div>
+          </div>
+          <div style="margin-top:14px;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,0.06);font-size:11px;color:#d2e5ff;display:flex;align-items:center;gap:10px;">
+            <span style="font-size:16px;">🔒</span>
+            <span>Tamper-proof student isolation. Only your verified academic profile is viewable.</span>
+          </div>
+        </div>
+      </div>
+      <div class="showcase-footer">
+        <span>CampusFlow Student Experience · Portal</span>
+        <span>© CampusFlow</span>
+      </div>
+    </aside>
+
+    <!-- RIGHT: Student sign-in & sign-up panel -->
+    <main class="auth-panel">
+      <div class="auth-panel-top">
+        <span class="secure-label">
+          <span style="background:#e6f7ff;color:#0070f3;">🎓</span> Student Portal Access
+        </span>
+        <span class="auth-step-label" style="color:#0070f3;">STUDENT WORKSPACE</span>
+      </div>
+
+      <section class="auth-card">
+        <div class="auth-mobile-brand">
+          <span class="brand-icon" style="background:linear-gradient(145deg,#0070f3,#0056b3);">🎓</span>
+          <span>Campus<span class="brand-light">Flow</span> Student</span>
+        </div>
+
+        <div class="auth-heading-mark" style="color:#0070f3;">
+          <span class="heading-mark-icon" style="background:#e6f7ff;color:#0070f3;border-color:#b5e3ff;">🎓</span>
+          <span id="studentAuthKicker">STUDENT SIGN IN</span>
+        </div>
+
+        <h1 id="studentAuthTitle">Student Portal</h1>
+        <p class="subtitle" id="studentAuthSubtitle">Enter your student account details to access your academic dashboard.</p>
+
+        <!-- STUDENT LOGIN FORM -->
+        <form id="studentLoginForm" class="auth-form" novalidate>
+          <label for="studentLoginUsername">Username or email</label>
+          <div class="auth-input-wrap">
+            <span class="input-icon" aria-hidden="true">👤</span>
+            <input id="studentLoginUsername" autocomplete="username" required placeholder="Enter student username or email">
+          </div>
+
+          <label for="studentLoginPassword">Password</label>
+          <div class="auth-input-wrap">
+            <span class="input-icon" aria-hidden="true">🔑</span>
+            <input id="studentLoginPassword" type="password" autocomplete="current-password" required placeholder="Enter password">
+            <button type="button" class="password-toggle" data-toggle-password="studentLoginPassword" aria-label="Show password" aria-pressed="false">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path class="eye-open" d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/>
+                <circle class="eye-open" cx="12" cy="12" r="3"/>
+                <path class="eye-closed" d="M3 3l18 18M10.6 5.1A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.1 3.9M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2"/>
+              </svg>
+            </button>
+          </div>
+
+          <p class="caps-warning hidden" id="studentLoginCaps">⚠ Caps Lock is on</p>
+          <p id="studentLoginMessage" class="auth-message hidden" aria-live="polite"></p>
+
+          <button class="primary-button auth-submit" id="studentLoginSubmit" type="submit" style="background:linear-gradient(100deg,#0070f3,#005bb5);">
+            <span>Sign in to Student Portal</span>
+            <span aria-hidden="true">→</span>
+          </button>
+        </form>
+
+        <!-- STUDENT REGISTRATION FORM -->
+        <form id="studentSignupForm" class="auth-form hidden" novalidate>
+          <label for="studentSignupFullName">Full name</label>
+          <div class="auth-input-wrap">
+            <span class="input-icon" aria-hidden="true">☺</span>
+            <input id="studentSignupFullName" autocomplete="name" maxlength="100" required placeholder="e.g. John Doe">
+          </div>
+
+          <label for="studentSignupUsername">Username</label>
+          <div class="auth-input-wrap">
+            <span class="input-icon" aria-hidden="true">♙</span>
+            <input id="studentSignupUsername" autocomplete="username" minlength="3" maxlength="50" required placeholder="Choose a username">
+          </div>
+          <p class="auth-field-hint">3–50 characters: letters, numbers, dot, underscore or hyphen.</p>
+
+          <label for="studentSignupEmail">Email address</label>
+          <div class="auth-input-wrap">
+            <span class="input-icon" aria-hidden="true">✉</span>
+            <input id="studentSignupEmail" type="email" autocomplete="email" maxlength="150" required placeholder="student@campus.edu">
+          </div>
+
+          <label for="studentSignupPassword">Password</label>
+          <div class="auth-input-wrap">
+            <span class="input-icon" aria-hidden="true">⌑</span>
+            <input id="studentSignupPassword" type="password" autocomplete="new-password" minlength="8" required placeholder="Create a strong password">
+            <button type="button" class="password-toggle" data-toggle-password="studentSignupPassword" aria-label="Show password" aria-pressed="false">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path class="eye-open" d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/>
+                <circle class="eye-open" cx="12" cy="12" r="3"/>
+                <path class="eye-closed" d="M3 3l18 18M10.6 5.1A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.1 3.9M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2"/>
+              </svg>
+            </button>
+          </div>
+          <div class="strength-meter" id="studentStrengthMeter" data-score="0" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+          <p class="auth-field-hint" id="studentStrengthText">Use at least 8 characters — mix upper & lower case, numbers and symbols.</p>
+
+          <label for="studentSignupConfirm">Confirm password</label>
+          <div class="auth-input-wrap">
+            <span class="input-icon" aria-hidden="true">✓</span>
+            <input id="studentSignupConfirm" type="password" autocomplete="new-password" minlength="8" required placeholder="Enter password again">
+            <button type="button" class="password-toggle" data-toggle-password="studentSignupConfirm" aria-label="Show password" aria-pressed="false">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path class="eye-open" d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/>
+                <circle class="eye-open" cx="12" cy="12" r="3"/>
+                <path class="eye-closed" d="M3 3l18 18M10.6 5.1A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.1 3.9M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2"/>
+              </svg>
+            </button>
+          </div>
+          <p class="auth-field-hint" id="studentMatchText"></p>
+          <p id="studentSignupMessage" class="auth-message hidden" aria-live="polite"></p>
+
+          <button class="primary-button auth-submit" id="studentSignupSubmit" type="submit" style="background:linear-gradient(100deg,#0070f3,#005bb5);">
+            <span>Create Student Account</span>
+            <span aria-hidden="true">→</span>
+          </button>
+        </form>
+
+        <div class="auth-divider">
+          <span></span>
+          <small>STUDENT PORTAL</small>
+          <span></span>
+        </div>
+
+        <p class="auth-switch" id="studentAuthSwitchText">
+          New student?
+          <button type="button" id="switchStudentAuth" class="text-button" style="color:#0070f3;">Create an account</button>
+        </p>
+
+        <!-- ADMIN LINK -->
+        <p class="auth-switch" style="margin-top:14px;border-top:1px dashed #e8ebf3;padding-top:14px;">
+          Campus Administrator or Staff?
+          <br>
+          <a href="/admin-login.html" class="text-button" style="display:inline-flex;align-items:center;gap:5px;margin-top:6px;font-weight:750;color:#5d44d4;text-decoration:none;">
+            <span>Go to Admin Console Sign In</span>
+            <span>↗</span>
+          </a>
+        </p>
+
+        <p class="auth-footnote">
+          <span aria-hidden="true">▣</span>
+          Account registration grants STUDENT role. An administrator will link your student ID.
+        </p>
+      </section>
+
+      <p class="auth-panel-bottom">
+        Need assistance with your student login? Contact your campus department registrar.
+      </p>
+    </main>
+  </div>
+</div>
+</body>
+</html>

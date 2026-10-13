@@ -3,82 +3,105 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CampusFlow | Sign in</title>
+  <title>CampusFlow | Select Portal</title>
   <link rel="stylesheet" href="style.css">
   <script src="login.js" defer></script>
 </head>
 <body>
 <div class="auth-screen">
-  <div class="auth-layout">
+  <div class="auth-layout" style="grid-template-columns: 1fr;">
 
-    <!-- LEFT: introduction panel -->
-    <aside class="auth-showcase" aria-label="CampusFlow introduction">
-      <a class="auth-showcase-brand" href="#"><span class="brand-icon">C</span><span>Campus<span class="brand-light">Flow</span></span></a>
-      <div class="showcase-content">
-        <span class="showcase-pill"><span class="live-dot"></span> YOUR CAMPUS, IN SYNC</span>
-        <h2>Everything for your<br><span>student journey.</span></h2>
-        <p>One simple workspace to manage students, courses, enrollment, attendance and grades — all stored in MySQL with Java + JDBC.</p>
-        <div class="showcase-visual" aria-hidden="true">
-          <div class="visual-topline"><span>ACADEMIC OVERVIEW</span><span class="visual-status">● LIVE</span></div>
-          <div class="visual-stat-row">
-            <div class="visual-stat"><span class="visual-icon violet">▦</span><strong>Students</strong><small>Organized in one place</small></div>
-            <div class="visual-stat"><span class="visual-icon peach">↗</span><strong>Progress</strong><small>Track every milestone</small></div>
+    <main class="auth-panel" style="min-height: 100vh; justify-content: center; padding: 40px 24px;">
+      
+      <div style="width: 100%; max-width: 720px; margin: auto;">
+        
+        <!-- HEADER -->
+        <div style="text-align: center; margin-bottom: 36px;">
+          <a class="auth-showcase-brand" href="/" style="display: inline-flex; align-items: center; gap: 12px; text-decoration: none; margin-bottom: 16px;">
+            <span class="brand-icon" style="display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(145deg, #7057e8, #523cc7); color: white; font-size: 22px; font-weight: 800;">C</span>
+            <span style="font-size: 26px; font-weight: 800; color: #1f2435;">Campus<span style="color: #7057e8;">Flow</span></span>
+          </a>
+          <div style="display: inline-block; padding: 6px 14px; border-radius: 999px; background: #ede8ff; color: #5d44d4; font-size: 11px; font-weight: 800; letter-spacing: 1px; margin-bottom: 12px;">
+            ROLE-SEPARATED CAMPUS PORTALS
           </div>
-          <div class="visual-chart"><div class="chart-copy"><span>Academic progress</span><strong>Stay on track</strong></div><div class="chart-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+          <h1 style="font-size: clamp(28px, 3.5vw, 36px); font-weight: 800; color: #1a1e36; margin: 0 0 10px; letter-spacing: -1px;">
+            Choose Your Portal
+          </h1>
+          <p style="color: #707589; font-size: 15px; margin: 0; max-width: 480px; margin: auto; line-height: 1.6;">
+            Students and Administrators use separate, secure portals. Please select your role to proceed to your dedicated sign-in page.
+          </p>
         </div>
+
+        <!-- PORTAL SELECTOR CARDS -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 36px;">
+
+          <!-- CARD 1: STUDENT PORTAL -->
+          <div style="background: white; border: 1.5px solid #dce8fa; border-radius: 18px; padding: 32px 28px; box-shadow: 0 10px 30px rgba(0, 112, 243, 0.06); display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, box-shadow 0.2s;">
+            <div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+                <div style="width: 52px; height: 52px; border-radius: 15px; background: #e6f7ff; color: #0070f3; display: grid; place-items: center; font-size: 26px;">
+                  🎓
+                </div>
+                <span class="role-badge student-badge">STUDENT ONLY</span>
+              </div>
+              <h2 style="font-size: 20px; font-weight: 750; color: #1a1e36; margin: 0 0 8px;">
+                Student Academic Portal
+              </h2>
+              <p style="color: #636b83; font-size: 13px; line-height: 1.6; margin: 0 0 20px;">
+                Access your personal course schedule, real-time attendance percentages, published subject marks, and calculated cumulative GPA.
+              </p>
+              <ul style="margin: 0 0 24px; padding-left: 20px; color: #4e556b; font-size: 12px; line-height: 1.8;">
+                <li>View enrolled courses & registration status</li>
+                <li>Track subject attendance & alerts</li>
+                <li>Check semester marks & GPA</li>
+                <li>New student registration available</li>
+              </ul>
+            </div>
+            <div>
+              <a href="/student-login.html" class="primary-button" style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 13px 20px; background: linear-gradient(100deg, #0070f3, #005bb5); text-decoration: none; border-radius: 12px; font-weight: 750; box-shadow: 0 8px 20px rgba(0, 112, 243, 0.25);">
+                <span>Sign in as Student</span>
+                <span style="font-size: 18px;">→</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- CARD 2: ADMIN CONSOLE -->
+          <div style="background: white; border: 1.5px solid #e5dffa; border-radius: 18px; padding: 32px 28px; box-shadow: 0 10px 30px rgba(112, 87, 232, 0.06); display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, box-shadow 0.2s;">
+            <div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+                <div style="width: 52px; height: 52px; border-radius: 15px; background: #ede8ff; color: #5d44d4; display: grid; place-items: center; font-size: 26px;">
+                  🛡️
+                </div>
+                <span class="role-badge admin-badge">RESTRICTED AREA</span>
+              </div>
+              <h2 style="font-size: 20px; font-weight: 750; color: #1a1e36; margin: 0 0 8px;">
+                Administrator Console
+              </h2>
+              <p style="color: #636b83; font-size: 13px; line-height: 1.6; margin: 0 0 20px;">
+                Command workspace for faculty and systems staff. Manage student records, departments, course enrollments, attendance, and account linking.
+              </p>
+              <ul style="margin: 0 0 24px; padding-left: 20px; color: #4e556b; font-size: 12px; line-height: 1.8;">
+                <li>Manage students & academic departments</li>
+                <li>Process registrations & grade rosters</li>
+                <li>Control student login account links</li>
+                <li>Access reports & export system data</li>
+              </ul>
+            </div>
+            <div>
+              <a href="/admin-login.html" class="primary-button" style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 13px 20px; background: linear-gradient(100deg, #5d44d4, #7057e8); text-decoration: none; border-radius: 12px; font-weight: 750; box-shadow: 0 8px 20px rgba(112, 87, 232, 0.25);">
+                <span>Sign in as Administrator</span>
+                <span style="font-size: 18px;">→</span>
+              </a>
+            </div>
+          </div>
+
+        </div>
+
+        <p style="text-align: center; color: #8e94a5; font-size: 12px; margin: 0;">
+          CampusFlow Student Course Registration and Management System &middot; Group 06
+        </p>
+
       </div>
-      <div class="showcase-footer"><span>Student Management System · Group 06</span><span>© CampusFlow</span></div>
-    </aside>
-
-    <!-- RIGHT: login / sign-up forms -->
-    <main class="auth-panel">
-      <div class="auth-panel-top"><span class="secure-label"><span>✓</span> Secure access</span><span class="auth-step-label">STUDENT MANAGEMENT SYSTEM</span></div>
-      <section class="auth-card">
-        <div class="auth-mobile-brand"><span class="brand-icon">C</span><span>Campus<span class="brand-light">Flow</span></span></div>
-        <div class="auth-heading-mark"><span class="heading-mark-icon">↗</span><span id="authKicker">WELCOME BACK</span></div>
-        <h1 id="authTitle">Sign in to your workspace</h1>
-        <p class="subtitle" id="authSubtitle">Enter your details below to access your dashboard.</p>
-
-        <!-- LOGIN FORM -->
-        <form id="loginForm" class="auth-form" novalidate>
-          <label for="loginUsername">Username or email</label>
-          <div class="auth-input-wrap"><span class="input-icon" aria-hidden="true">♙</span><input id="loginUsername" autocomplete="username" required placeholder="Enter your username or email"></div>
-          <label for="loginPassword">Password</label>
-          <div class="auth-input-wrap"><span class="input-icon" aria-hidden="true">⌑</span><input id="loginPassword" type="password" autocomplete="current-password" required placeholder="Enter your password">
-            <button type="button" class="password-toggle" data-toggle-password="loginPassword" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="eye-open" d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle class="eye-open" cx="12" cy="12" r="3"/><path class="eye-closed" d="M3 3l18 18M10.6 5.1A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.1 3.9M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg></button></div>
-          <p class="caps-warning hidden" id="loginCaps">⚠ Caps Lock is on</p>
-          <p id="loginMessage" class="auth-message hidden" aria-live="polite"></p>
-          <button class="primary-button auth-submit" id="loginSubmit" type="submit"><span>Sign in</span><span aria-hidden="true">→</span></button>
-        </form>
-
-        <!-- SIGN-UP FORM -->
-        <form id="signupForm" class="auth-form hidden" novalidate>
-          <label for="signupFullName">Full name</label>
-          <div class="auth-input-wrap"><span class="input-icon" aria-hidden="true">☺</span><input id="signupFullName" autocomplete="name" maxlength="100" required placeholder="Enter your full name"></div>
-          <label for="signupUsername">Username</label>
-          <div class="auth-input-wrap"><span class="input-icon" aria-hidden="true">♙</span><input id="signupUsername" autocomplete="username" minlength="3" maxlength="50" required placeholder="Choose a username"></div>
-          <p class="auth-field-hint">3–50 characters: letters, numbers, dot, underscore or hyphen.</p>
-          <label for="signupEmail">Email address</label>
-          <div class="auth-input-wrap"><span class="input-icon" aria-hidden="true">✉</span><input id="signupEmail" type="email" autocomplete="email" maxlength="150" required placeholder="name@example.com"></div>
-          <label for="signupPassword">Password</label>
-          <div class="auth-input-wrap"><span class="input-icon" aria-hidden="true">⌑</span><input id="signupPassword" type="password" autocomplete="new-password" minlength="8" required placeholder="Create a strong password">
-            <button type="button" class="password-toggle" data-toggle-password="signupPassword" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="eye-open" d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle class="eye-open" cx="12" cy="12" r="3"/><path class="eye-closed" d="M3 3l18 18M10.6 5.1A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.1 3.9M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg></button></div>
-          <div class="strength-meter" id="strengthMeter" data-score="0" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-          <p class="auth-field-hint" id="strengthText">Use at least 8 characters — mix upper &amp; lower case, numbers and symbols.</p>
-          <p class="caps-warning hidden" id="signupCaps">⚠ Caps Lock is on</p>
-          <label for="signupConfirmPassword">Confirm password</label>
-          <div class="auth-input-wrap"><span class="input-icon" aria-hidden="true">✓</span><input id="signupConfirmPassword" type="password" autocomplete="new-password" minlength="8" required placeholder="Enter your password again">
-            <button type="button" class="password-toggle" data-toggle-password="signupConfirmPassword" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="eye-open" d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle class="eye-open" cx="12" cy="12" r="3"/><path class="eye-closed" d="M3 3l18 18M10.6 5.1A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.1 3.9M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg></button></div>
-          <p class="auth-field-hint" id="matchText"></p>
-          <p id="signupMessage" class="auth-message hidden" aria-live="polite"></p>
-          <button class="primary-button auth-submit" id="signupSubmit" type="submit"><span>Create account</span><span aria-hidden="true">→</span></button>
-        </form>
-
-        <div class="auth-divider"><span></span><small>YOUR CAMPUS WORKSPACE</small><span></span></div>
-        <p class="auth-switch" id="authSwitchText">New to CampusFlow? <button type="button" id="switchAuth" class="text-button">Create an account</button></p>
-        <p class="auth-footnote"><span aria-hidden="true">▣</span> Passwords are stored as salted SHA-256 hashes, never as plain text.</p>
-      </section>
-      <p class="auth-panel-bottom">Need help? Contact your campus administrator.</p>
     </main>
   </div>
 </div>
