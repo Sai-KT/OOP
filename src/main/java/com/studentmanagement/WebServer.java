@@ -36,6 +36,7 @@ public class WebServer {
     private static final StudentManager manager = new StudentManager();
     private static final AuthManager auth = new AuthManager();
     private static final AttendanceManager attendance = new AttendanceManager();
+    private static final StudentPortalService studentService = new StudentPortalService();
     private static final String SESSION_COOKIE = "CFSESSION";
 
     public static void main(String[] args) throws IOException {
@@ -75,6 +76,14 @@ public class WebServer {
         server.createContext("/api/grades", adminOnly(WebServer::grades));
         server.createContext("/api/gpa", adminOnly(WebServer::gpa));
         server.createContext("/api/attendance", adminOnly(WebServer::attendance));
+
+        // ---------------- STUDENT ONLY ENDPOINTS (PHASE 4) ----------------
+        server.createContext("/api/student/me", studentOnly(WebServer::studentMe));
+        server.createContext("/api/student/courses", studentOnly(WebServer::studentCourses));
+        server.createContext("/api/student/registrations", studentOnly(WebServer::studentRegistrations));
+        server.createContext("/api/student/attendance", studentOnly(WebServer::studentAttendance));
+        server.createContext("/api/student/grades", studentOnly(WebServer::studentGrades));
+        server.createContext("/api/student/gpa", studentOnly(WebServer::studentGpa));
 
         // ---------------- SHARED AUTHENTICATED ENDPOINTS (ADMIN & STUDENT) ----------------
         // Course catalog view is available to all authenticated users
@@ -123,9 +132,17 @@ public class WebServer {
         };
     }
 
-    // Enforces STUDENT-only authorization.
-    // Returns 401 if unauthenticated, 403 if authenticated without STUDENT role.
-    private static HttpHandler studentOnly(HttpHandler handler) {
+    @FunctionalInterface
+    private interface StudentHandler {
+        void handle(HttpExchange ex, UserAccount user) throws Exception;
+    }
+
+    // Enforces STUDENT-only authorization with strict account linking and GET-only checks.
+    // 401 if unauthenticated.
+    // 403 if authenticated but not STUDENT role.
+    // 405 if method is not GET.
+    // 403 if student account is not linked to a student record.
+    private static HttpHandler studentOnly(StudentHandler handler) {
         return ex -> {
             if (handleOptions(ex)) return;
             UserAccount user = auth.getUser(sessionToken(ex));
@@ -134,10 +151,26 @@ public class WebServer {
                 return;
             }
             if (user.getRole() != Role.STUDENT) {
-                sendError(ex, 403, "Access denied: Student privileges required.");
+                sendError(ex, 403, "Access denied: Student access required.");
                 return;
             }
-            handler.handle(ex);
+            if (!"GET".equals(ex.getRequestMethod())) {
+                sendError(ex, 405, "Method not allowed. Supported method: GET.");
+                return;
+            }
+            if (user.getStudentId() == null) {
+                sendError(ex, 403, "Your account is not linked to a student record. Please contact an administrator to link your account.");
+                return;
+            }
+            try {
+                handler.handle(ex, user);
+            } catch (SQLException e) {
+                System.err.println("Student portal SQL error: " + e.getMessage());
+                sendError(ex, 500, "Internal server error. Please try again later.");
+            } catch (Exception e) {
+                System.err.println("Student portal error: " + e.getMessage());
+                sendError(ex, 500, "Internal server error. Please try again later.");
+            }
         };
     }
 
@@ -539,6 +572,44 @@ public class WebServer {
             System.err.println("Attendance GET SQL error: " + e.getMessage());
             sendError(ex, 500, "Internal server error. Please try again later.");
         }
+    }
+
+    // ===================== STUDENT PORTAL HANDLERS (PHASE 4) =====================
+
+    // GET /api/student/me
+    private static void studentMe(HttpExchange ex, UserAccount user) throws IOException, SQLException {
+        String profile = studentService.getProfile(user.getStudentId());
+        if (profile == null) {
+            sendError(ex, 404, "Student record not found.");
+            return;
+        }
+        send(ex, 200, profile);
+    }
+
+    // GET /api/student/courses
+    private static void studentCourses(HttpExchange ex, UserAccount user) throws IOException, SQLException {
+        send(ex, 200, studentService.getCourses(user.getStudentId()));
+    }
+
+    // GET /api/student/registrations
+    private static void studentRegistrations(HttpExchange ex, UserAccount user) throws IOException, SQLException {
+        send(ex, 200, studentService.getRegistrations(user.getStudentId()));
+    }
+
+    // GET /api/student/attendance
+    private static void studentAttendance(HttpExchange ex, UserAccount user) throws IOException, SQLException {
+        send(ex, 200, studentService.getAttendance(user.getStudentId()));
+    }
+
+    // GET /api/student/grades
+    private static void studentGrades(HttpExchange ex, UserAccount user) throws IOException, SQLException {
+        send(ex, 200, studentService.getGrades(user.getStudentId()));
+    }
+
+    // GET /api/student/gpa
+    private static void studentGpa(HttpExchange ex, UserAccount user) throws IOException, SQLException {
+        double gpa = studentService.getGpa(user.getStudentId());
+        send(ex, 200, json("studentId", user.getStudentId(), "gpa", gpa));
     }
 
     // ===================== STATIC & HTML ROUTE PROTECTION =====================
