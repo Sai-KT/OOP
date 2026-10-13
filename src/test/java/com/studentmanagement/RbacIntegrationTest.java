@@ -5,6 +5,7 @@ import org.junit.jupiter.api.*;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -12,8 +13,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -40,7 +39,7 @@ public class RbacIntegrationTest {
 
     // Helper to send HTTP requests with session cookie
     private static HttpResponse request(String method, String path, Map<String, String> form, String cookie) throws Exception {
-        URL url = new URL(BASE_URL + path);
+        URL url = URI.create(BASE_URL + path).toURL();
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod(method);
         conn.setInstanceFollowRedirects(false); // Do not follow 302 redirects automatically
@@ -74,7 +73,7 @@ public class RbacIntegrationTest {
         return new HttpResponse(status, body, setCookie, location);
     }
 
-    private static class HttpResponse {
+    static class HttpResponse {
         final int status;
         final String body;
         final String cookie;
@@ -84,6 +83,10 @@ public class RbacIntegrationTest {
             this.body = body;
             this.cookie = cookie;
             this.location = location;
+        }
+
+        public String getLocation() {
+            return location;
         }
     }
 
@@ -222,6 +225,11 @@ public class RbacIntegrationTest {
         // 8. GET /index.html (admin dashboard page)
         HttpResponse r8 = request("GET", "/index.html", null, studentCookie);
         assertEquals(403, r8.status, "Student attempting to load index.html must be blocked with 403");
+
+        // 9. GET /index.html as anonymous user redirects to /login.html
+        HttpResponse rAnon = request("GET", "/index.html", null, null);
+        assertEquals(302, rAnon.status, "Unauthenticated user accessing index.html must be redirected");
+        assertEquals("/login.html", rAnon.getLocation(), "Redirect destination must be /login.html");
     }
 
     @Test

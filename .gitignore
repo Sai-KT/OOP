@@ -1,5 +1,6 @@
 # Maven build target
 target/
+*.class
 
 # Classpath file
 cp.txt
