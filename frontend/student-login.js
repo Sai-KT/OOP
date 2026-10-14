@@ -18,9 +18,8 @@ function showMessage(id, text, success = false, isAdminAttempt = false) {
 
   if (isAdminAttempt) {
     node.innerHTML = `${icon}<div>`
-      + `<div style="font-weight:700;">Administrator Account Detected</div>`
+      + `<div style="font-weight:700;">Access Denied</div>`
       + `<div style="margin-top:3px;font-size:12px;">${text}</div>`
-      + `<div style="margin-top:8px;"><a href="/admin-login.html" style="color:#0284c7;font-weight:700;text-decoration:underline;">Click here to sign in via Admin Console &rarr;</a></div>`
       + `</div>`;
   } else {
     node.innerHTML = `${icon}<div>${text}</div>`;
@@ -154,7 +153,7 @@ $("studentLoginForm").addEventListener("submit", async event => {
 
     if (response.status === 403) {
       // Forbidden: administrator account attempted to sign in on student portal
-      showMessage("studentLoginMessage", body.message || "This portal is strictly reserved for Students. Administrators must use the Admin Console.", false, true);
+      showMessage("studentLoginMessage", body.message || "This portal is strictly reserved for students. Access denied.", false, true);
       setBusy($("studentLoginSubmit"), false, "Sign In");
       return;
     }
