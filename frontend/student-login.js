@@ -76,15 +76,34 @@ document.querySelectorAll("[data-toggle-password]").forEach(button => {
   });
 });
 
-// Caps Lock detection on login password
-(function setupCapsLock() {
+// Caps Lock detection & space bar filter for student section
+(function setupInputFilters() {
   const check = event => {
     if (event.getModifierState) $("studentLoginCaps").classList.toggle("hidden", !event.getModifierState("CapsLock"));
   };
   const pw = $("studentLoginPassword");
-  pw.addEventListener("keydown", check);
-  pw.addEventListener("keyup", check);
-  pw.addEventListener("blur", () => $("studentLoginCaps").classList.add("hidden"));
+  const user = $("studentLoginUsername");
+
+  if (pw) {
+    pw.addEventListener("keydown", check);
+    pw.addEventListener("keyup", check);
+    pw.addEventListener("blur", () => $("studentLoginCaps").classList.add("hidden"));
+  }
+
+  // Neglect spaces if space bar is clicked by mistake in student username or password
+  [user, pw, $("studentSignupUsername"), $("studentSignupPassword"), $("studentSignupConfirm")].forEach(input => {
+    if (!input) return;
+    input.addEventListener("keydown", e => {
+      if (e.key === " " || e.code === "Space") {
+        e.preventDefault(); // Ignore space bar keypress
+      }
+    });
+    input.addEventListener("input", e => {
+      if (e.target.value.includes(" ")) {
+        e.target.value = e.target.value.replace(/\s+/g, "");
+      }
+    });
+  });
 })();
 
 // Password strength calculation
@@ -99,7 +118,7 @@ function passwordScore(password) {
 }
 
 function updateStrength() {
-  const password = $("studentSignupPassword").value;
+  const password = $("studentSignupPassword").value.replace(/\s+/g, "");
   const score = passwordScore(password);
   const labels = [
     "8+ characters recommended",
@@ -115,14 +134,14 @@ function updateStrength() {
 }
 
 function updateMatch() {
-  const confirm = $("studentSignupConfirm").value;
+  const confirm = $("studentSignupConfirm").value.replace(/\s+/g, "");
   const node = $("studentMatchText");
   if (!confirm) {
     node.textContent = "";
     node.className = "field-hint";
     return;
   }
-  const same = confirm === $("studentSignupPassword").value;
+  const same = confirm === $("studentSignupPassword").value.replace(/\s+/g, "");
   node.textContent = same ? "✓ Passwords match" : "✗ Passwords do not match";
   node.className = "field-hint " + (same ? "ok" : "error");
 }
@@ -133,8 +152,9 @@ $("studentSignupConfirm").addEventListener("input", updateMatch);
 // Student login form submit with portal=STUDENT
 $("studentLoginForm").addEventListener("submit", async event => {
   event.preventDefault();
-  const username = $("studentLoginUsername").value.trim();
-  const password = $("studentLoginPassword").value;
+  // Neglect any accidental spaces from student username and password
+  const username = $("studentLoginUsername").value.replace(/\s+/g, "");
+  const password = $("studentLoginPassword").value.replace(/\s+/g, "");
   if (!username || !password) {
     showMessage("studentLoginMessage", "Please enter your username/email and password.");
     return;
@@ -176,10 +196,10 @@ $("studentLoginForm").addEventListener("submit", async event => {
 $("studentSignupForm").addEventListener("submit", async event => {
   event.preventDefault();
   const fullName = $("studentSignupFullName").value.trim();
-  const username = $("studentSignupUsername").value.trim();
-  const email = $("studentSignupEmail").value.trim();
-  const password = $("studentSignupPassword").value;
-  const confirm = $("studentSignupConfirm").value;
+  const username = $("studentSignupUsername").value.replace(/\s+/g, "");
+  const email = $("studentSignupEmail").value.replace(/\s+/g, "");
+  const password = $("studentSignupPassword").value.replace(/\s+/g, "");
+  const confirm = $("studentSignupConfirm").value.replace(/\s+/g, "");
 
   if (!fullName || !username || !email || !password) return showMessage("studentSignupMessage", "Please fill in every field.");
   if (!/^[A-Za-z0-9_.-]{3,50}$/.test(username)) return showMessage("studentSignupMessage", "Username must be 3–50 letters, numbers, dot, underscore or hyphen.");

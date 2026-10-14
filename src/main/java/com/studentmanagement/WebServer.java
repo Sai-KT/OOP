@@ -186,9 +186,12 @@ public class WebServer {
         if (handleOptions(ex)) return;
         if (!"POST".equals(ex.getRequestMethod())) { sendError(ex, 405, "Method not allowed. Supported method: POST."); return; }
         Map<String, String> form = readForm(ex);
+        String fullName = form.getOrDefault("fullName", "").trim();
+        String username = form.getOrDefault("username", "").replaceAll("\\s+", "");
+        String email = form.getOrDefault("email", "").replaceAll("\\s+", "").toLowerCase();
+        String password = form.getOrDefault("password", "").replaceAll("\\s+", "");
         try {
-            auth.signup(form.getOrDefault("fullName", "").trim(), form.getOrDefault("username", "").trim(),
-                    form.getOrDefault("email", "").trim().toLowerCase(), form.getOrDefault("password", ""));
+            auth.signup(fullName, username, email, password);
             send(ex, 201, json("message", "Account created. Please sign in."));
         } catch (InvalidSignupException e) {
             sendError(ex, 400, e.getMessage());
@@ -211,13 +214,13 @@ public class WebServer {
         String username = form.getOrDefault("username", "").trim();
         String password = form.getOrDefault("password", "");
 
-        if ("ADMIN".equals(portal)) {
+        if ("ADMIN".equals(portal) || "STUDENT".equals(portal)) {
             username = username.replaceAll("\\s+", "");
         }
 
         try {
             UserAccount user;
-            if ("ADMIN".equals(portal)) {
+            if ("ADMIN".equals(portal) || "STUDENT".equals(portal)) {
                 try {
                     user = auth.login(username, password.trim());
                 } catch (InvalidLoginException ile) {
