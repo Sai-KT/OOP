@@ -265,12 +265,20 @@ body.admin-body {
   width: 38px;
   height: 38px;
   border-radius: 11px;
-  background: linear-gradient(135deg, #4f46e5, #6366f1);
-  color: #ffffff;
+  background: transparent;
   display: grid;
   place-items: center;
   box-shadow: 0 6px 18px rgba(79, 70, 229, 0.45);
   border: 1px solid rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.admin-brand-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .admin-brand-title {
@@ -632,12 +640,20 @@ body.student-body {
   width: 38px;
   height: 38px;
   border-radius: 11px;
-  background: linear-gradient(135deg, #0284c7, #0369a1);
-  color: #ffffff;
+  background: transparent;
   display: grid;
   place-items: center;
   box-shadow: 0 5px 16px rgba(2, 132, 199, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.35);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.student-brand-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .student-brand-title {
