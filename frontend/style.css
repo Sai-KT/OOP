@@ -1261,7 +1261,7 @@ tbody tr:hover {
   }
 }
 
-/* CampusFlow additions: login, role-based controls, attendance and accounts */
+/* EduBridge additions: login, role-based controls, attendance and accounts */
 .login-screen{position:fixed;inset:0;z-index:10000;background:linear-gradient(135deg,#f8f5ee,#edf4f5);display:flex;align-items:center;justify-content:center;padding:24px;overflow:auto}.login-screen.hidden{display:none}.login-card{background:#fff;border:1px solid #e6e8eb;border-radius:24px;box-shadow:0 24px 70px rgba(28,45,60,.12);width:min(100%,440px);padding:34px}.login-brand{display:flex;align-items:center;gap:10px;font-size:23px;font-weight:800;margin-bottom:28px}.login-card h1{font-size:30px;margin:8px 0}.login-hint{display:flex;flex-direction:column;gap:5px;background:#f7f8fa;border-radius:12px;padding:13px;margin-top:20px;font-size:12px;color:#626b76}.small-button{padding:7px 10px;font-size:12px}.admin-only.hidden,.admin-faculty-only.hidden{display:none!important}.status-attendance{display:inline-flex;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:700}.attendance-present{background:#e6f6ed;color:#18734a}.attendance-absent{background:#fdebec;color:#a62e38}.attendance-late{background:#fff1d8;color:#8b5a00}.attendance-excused{background:#eaf1ff;color:#315ca8}.login-card .form-message{min-height:18px}.login-card .form-message.error-text{color:#b42318}.login-card input{width:100%}
 
 /* Role-based UI mirrors server-side permissions (server remains authoritative). */
@@ -1301,7 +1301,7 @@ body[data-role="FACULTY"] #addStudentButton,body[data-role="FACULTY"] #addStuden
 @media (max-width: 480px) { .auth-card { padding:26px 21px; } }
 
 
-/* PROFESSIONAL CAMPUSFLOW AUTH EXPERIENCE */
+/* PROFESSIONAL EDUBRIDGE AUTH EXPERIENCE */
 .auth-screen{position:fixed;inset:0;z-index:10000;display:block;min-height:100vh;overflow-y:auto;padding:0;background:#f7f8fc;color:#1d2433;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 .auth-layout{display:grid;grid-template-columns:minmax(380px,0.92fr) minmax(470px,1.08fr);min-height:100vh}
 .auth-showcase{position:relative;display:flex;flex-direction:column;justify-content:space-between;min-height:100vh;overflow:hidden;padding:42px clamp(30px,5vw,76px);color:#fff;background:radial-gradient(ellipse at 14% 7%,rgba(130,112,255,.35),transparent 34%),radial-gradient(ellipse at 94% 90%,rgba(86,112,216,.28),transparent 32%),linear-gradient(145deg,#191d39 0%,#26274d 55%,#303466 100%)}

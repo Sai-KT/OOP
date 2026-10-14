@@ -1,6 +1,6 @@
-# CampusFlow — RBAC Security Audit & Test Report (`RBAC_TEST_RESULTS.md`)
+# EduBridge — RBAC Security Audit & Test Report (`RBAC_TEST_RESULTS.md`)
 
-This report provides the exhaustive testing results and security audit verification for **Phase 8** of the CampusFlow Student Management System.
+This report provides the exhaustive testing results and security audit verification for **Phase 8** of the EduBridge Student Management System.
 
 ---
 

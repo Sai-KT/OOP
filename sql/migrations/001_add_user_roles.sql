@@ -1,7 +1,7 @@
 -- ============================================================================
 -- Migration: 001_add_user_roles.sql
 -- Description: Add Role-Based Access Control (ADMIN, STUDENT) and Student Link
--- Project: CampusFlow Student Management System
+-- Project: EduBridge Student Management System
 -- Database: student_course_db
 -- Target Table: users
 -- ============================================================================

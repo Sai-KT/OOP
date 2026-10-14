@@ -1,9 +1,9 @@
-# CampusFlow Database Migrations
+# EduBridge Database Migrations
 
 ## Migration 001: Add User Roles (`001_add_user_roles.sql`)
 
 ### 1. Overview & Mechanics
-This migration introduces **Role-Based Access Control (RBAC)** to the CampusFlow database (`student_course_db`):
+This migration introduces **Role-Based Access Control (RBAC)** to the EduBridge database (`student_course_db`):
 - Introduces two roles: `ADMIN` and `STUDENT`.
 - Adds a nullable `student_id` column to the `users` table linked to `students(student_id)`.
 - Implements the principle of least privilege: all existing and newly inserted accounts strictly default to `STUDENT`.

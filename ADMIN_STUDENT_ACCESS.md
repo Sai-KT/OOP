@@ -1,19 +1,19 @@
-# CampusFlow — Admin & Student RBAC Guide (`ADMIN_STUDENT_ACCESS.md`)
+# EduBridge — Admin & Student RBAC Guide (`ADMIN_STUDENT_ACCESS.md`)
 
-This guide explains the Role-Based Access Control (RBAC) architecture, authentication lifecycle, account-to-student linking model, and demonstration instructions for **CampusFlow Student Management System**.
+This guide explains the Role-Based Access Control (RBAC) architecture, authentication lifecycle, account-to-student linking model, and demonstration instructions for **EduBridge Student Management System**.
 
 ---
 
 ## 1. How Role-Based Authorization Works
 
-CampusFlow implements a multi-tier, defense-in-depth authorization model built on vanilla Java (`com.sun.net.httpserver.HttpServer`), JDBC, and MySQL.
+EduBridge implements a multi-tier, defense-in-depth authorization model built on vanilla Java (`com.sun.net.httpserver.HttpServer`), JDBC, and MySQL.
 
 ### Architectural Flow
 
 ```
 [ Browser / API Client ]
          │
-         │  HTTP Request (Cookie: campusflow_session=<token>)
+         │  HTTP Request (Cookie: EBSESSION=<token>)
          ▼
 [ WebServer Route Handlers ]
          │
@@ -48,7 +48,7 @@ CampusFlow implements a multi-tier, defense-in-depth authorization model built o
 
 ### Separation of Concerns
 
-CampusFlow purposefully decouples **Login Credentials (`users`)** from **Institutional Academic Records (`students`)**:
+EduBridge purposefully decouples **Login Credentials (`users`)** from **Institutional Academic Records (`students`)**:
 1. **Academic Records (`students`)**: Pre-populated by the registrar containing grades, enrollments, departmental records, and semester progress.
 2. **User Accounts (`users`)**: Created when an individual signs up or when an administrator is bootstrapped. Contains username, password salt/hash, and role.
 
@@ -85,15 +85,15 @@ ALTER TABLE users
 
 ## 3. How the Initial Administrator is Created
 
-CampusFlow prohibits public self-registration of administrator accounts. Administrators can only be created via secure server-side provisioning:
+EduBridge prohibits public self-registration of administrator accounts. Administrators can only be created via secure server-side provisioning:
 
 ### Option A: Environment Variable Bootstrap (`AuthManager.bootstrapAdmin()`)
 Configure environment variables before launching the server:
 ```bash
-export CAMPUSFLOW_ADMIN_USERNAME="sysadmin"
-export CAMPUSFLOW_ADMIN_EMAIL="admin@campusflow.edu"
-export CAMPUSFLOW_ADMIN_PASSWORD="AdminSecurePassword123!"
-export CAMPUSFLOW_ADMIN_NAME="Head Administrator"
+export EDUBRIDGE_ADMIN_USERNAME="sysadmin"
+export EDUBRIDGE_ADMIN_EMAIL="admin@edubridge.edu"
+export EDUBRIDGE_ADMIN_PASSWORD="AdminSecurePassword123!"
+export EDUBRIDGE_ADMIN_NAME="Head Administrator"
 ```
 When `WebServer` starts, `bootstrapAdmin()`:
 - Verifies that no `ADMIN` account currently exists in `users`.
@@ -131,7 +131,7 @@ Choose menu option `11. Setup Administrator Account` to configure the credential
 
 ## 5. Demonstrating the Separated Portals and Login Pages
 
-CampusFlow provides completely isolated portals and dedicated sign-in pages to guarantee role separation:
+EduBridge provides completely isolated portals and dedicated sign-in pages to guarantee role separation:
 
 | Feature Area | Admin Portal (`/index.html`) | Student Portal (`/student.html`) |
 |--------------|--------------------------------|----------------------------------|

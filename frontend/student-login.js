@@ -1,6 +1,6 @@
 "use strict";
 
-// CampusFlow Dedicated Student Portal Login & Registration Controller
+// EduBridge Dedicated Student Portal Login & Registration Controller
 const $ = id => document.getElementById(id);
 let isSignupMode = false;
 

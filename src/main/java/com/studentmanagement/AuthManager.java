@@ -157,15 +157,20 @@ class AuthManager {
     // INITIAL ADMIN PROVISIONING:
     // Creates ONE initial ADMIN account using environment variables if no admin exists.
     // Environment variables:
-    //   CAMPUSFLOW_ADMIN_NAME (optional, defaults to "CampusFlow Administrator")
-    //   CAMPUSFLOW_ADMIN_USERNAME (required)
-    //   CAMPUSFLOW_ADMIN_EMAIL (required)
-    //   CAMPUSFLOW_ADMIN_PASSWORD (required, >= 8 chars)
+    //   EDUBRIDGE_ADMIN_NAME / CAMPUSFLOW_ADMIN_NAME (optional, defaults to "EduBridge Administrator")
+    //   EDUBRIDGE_ADMIN_USERNAME / CAMPUSFLOW_ADMIN_USERNAME (required)
+    //   EDUBRIDGE_ADMIN_EMAIL / CAMPUSFLOW_ADMIN_EMAIL (required)
+    //   EDUBRIDGE_ADMIN_PASSWORD / CAMPUSFLOW_ADMIN_PASSWORD (required, >= 8 chars)
     public void bootstrapAdmin() throws SQLException {
-        String adminPassword = System.getenv("CAMPUSFLOW_ADMIN_PASSWORD");
-        String adminUsername = System.getenv("CAMPUSFLOW_ADMIN_USERNAME");
-        String adminEmail = System.getenv("CAMPUSFLOW_ADMIN_EMAIL");
-        String adminName = System.getenv().getOrDefault("CAMPUSFLOW_ADMIN_NAME", "CampusFlow Administrator").trim();
+        String adminPassword = getEnv("EDUBRIDGE_ADMIN_PASSWORD", "CAMPUSFLOW_ADMIN_PASSWORD");
+        String adminUsername = getEnv("EDUBRIDGE_ADMIN_USERNAME", "CAMPUSFLOW_ADMIN_USERNAME");
+        String adminEmail = getEnv("EDUBRIDGE_ADMIN_EMAIL", "CAMPUSFLOW_ADMIN_EMAIL");
+        String adminName = getEnv("EDUBRIDGE_ADMIN_NAME", "CAMPUSFLOW_ADMIN_NAME");
+        if (adminName == null || adminName.isBlank()) {
+            adminName = "EduBridge Administrator";
+        } else {
+            adminName = adminName.trim();
+        }
 
         // If credentials are not configured in environment, do nothing
         if (adminPassword == null || adminPassword.isBlank() ||
@@ -204,7 +209,7 @@ class AuthManager {
             }
 
             if (adminPassword.length() < 8) {
-                System.err.println("SECURITY ALERT: CAMPUSFLOW_ADMIN_PASSWORD must be at least 8 characters long.");
+                System.err.println("SECURITY ALERT: EDUBRIDGE_ADMIN_PASSWORD must be at least 8 characters long.");
                 return;
             }
 
@@ -219,10 +224,16 @@ class AuthManager {
                 ps.setString(5, salt);
                 ps.setString(6, Role.ADMIN.name());
                 ps.executeUpdate();
-                System.out.println("CampusFlow: Initial administrator account created successfully: " + adminUsername);
-                System.out.println("Security Notice: Remove CAMPUSFLOW_ADMIN_PASSWORD from environment once initialized.");
+                System.out.println("EduBridge: Initial administrator account created successfully: " + adminUsername);
+                System.out.println("Security Notice: Remove EDUBRIDGE_ADMIN_PASSWORD from environment once initialized.");
             }
         }
+    }
+
+    private static String getEnv(String primary, String fallback) {
+        String val = System.getenv(primary);
+        if (val != null && !val.isBlank()) return val;
+        return System.getenv(fallback);
     }
 
     // Session handling: random token -> logged-in user (stored in a ConcurrentHashMap).

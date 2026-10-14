@@ -1,6 +1,6 @@
 "use strict";
 
-// CampusFlow Student Portal Frontend Controller (Phase 7)
+// EduBridge Student Portal Frontend Controller (Phase 7)
 // Pure Vanilla JavaScript communicating with read-only /api/student/* endpoints.
 
 const API = "/api";
@@ -227,7 +227,7 @@ function renderOverview() {
 
   $("overviewGpa").textContent = Number(gpa).toFixed(2);
   $("overviewStudentType").textContent = profile.studentType ? profile.studentType.toLowerCase() : "Undergraduate";
-  $("overviewDepartmentShort").textContent = profile.departmentName || "CampusFlow Academic";
+  $("overviewDepartmentShort").textContent = profile.departmentName || "EduBridge Academic";
 
   $("overviewGuidanceText").textContent = profile.guidance || "Maintain active course participation and track prerequisite requirements.";
 

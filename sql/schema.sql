@@ -49,7 +49,7 @@ INSERT IGNORE INTO courses(course_code, course_name, credits, capacity, prerequi
 ('IT301','Database Management Systems',3,2,'IT201');
 
 
--- Department-based grades used by the CampusFlow Grades & GPA page.
+-- Department-based grades used by the EduBridge Grades & GPA page.
 CREATE TABLE IF NOT EXISTS department_grades (
     student_id INT NOT NULL,
     department_id INT NOT NULL,

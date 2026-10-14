@@ -95,7 +95,7 @@ public class RbacIntegrationTest {
         HttpResponse res = request("POST", "/api/auth/login", form, null);
         assertEquals(200, res.status, "Login failed for " + username + ": " + res.body);
         assertNotNull(res.cookie, "Session cookie must be returned upon successful login");
-        return res.cookie.split(";")[0]; // returns "campusflow_session=..."
+        return res.cookie.split(";")[0]; // returns "EBSESSION=..."
     }
 
     @Test

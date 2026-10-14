@@ -37,7 +37,7 @@ public class WebServer {
     private static final AuthManager auth = new AuthManager();
     private static final AttendanceManager attendance = new AttendanceManager();
     private static final StudentPortalService studentService = new StudentPortalService();
-    private static final String SESSION_COOKIE = "CFSESSION";
+    private static final String SESSION_COOKIE = "EBSESSION";
 
     public static void main(String[] args) throws IOException {
         // Create required tables if missing (fresh installation support)
@@ -99,7 +99,7 @@ public class WebServer {
 
         server.setExecutor(null); // default executor
         server.start();
-        System.out.println("CampusFlow dashboard running at http://localhost:" + PORT);
+        System.out.println("EduBridge dashboard running at http://localhost:" + PORT);
         System.out.println("Serving frontend from: " + FRONTEND);
     }
 
@@ -913,7 +913,7 @@ public class WebServer {
             Path studentFile = FRONTEND.resolve("student.html").normalize();
             if (!Files.isRegularFile(studentFile)) {
                 // Graceful fallback while student dashboard is under development
-                String html = "<!doctype html><html><head><meta charset='utf-8'><title>CampusFlow | Student Portal</title>"
+                String html = "<!doctype html><html><head><meta charset='utf-8'><title>EduBridge | Student Portal</title>"
                         + "<link rel='stylesheet' href='/style.css'></head><body style='display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;'>"
                         + "<div style='text-align:center;padding:48px;background:#fff;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,0.08);max-width:440px;'>"
                         + "<h2 style='margin-top:0;color:#292640;'>Student Portal</h2>"

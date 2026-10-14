@@ -984,7 +984,7 @@ $("cancelImport").addEventListener("click", () => closeModal("importModal"));
 /* REPORTS */
 
 function exportStudents() {
-  csvDownload("campusflow-students.csv", [
+  csvDownload("edubridge-students.csv", [
     ["Student ID", s => s.studentId], ["Name", s => s.studentName], ["Email", s => s.email],
     ["Department", s => s.departmentName], ["Year", s => yearLabel(s.semester)],
     ["Semester", s => s.semester], ["GPA", s => s.gpa],
@@ -994,15 +994,15 @@ function exportStudents() {
 
 $("exportStudentsButton").addEventListener("click", exportStudents);
 $("reportStudentsButton").addEventListener("click", exportStudents);
-$("reportEnrollmentsButton").addEventListener("click", () => csvDownload("campusflow-enrollment.csv", [
+$("reportEnrollmentsButton").addEventListener("click", () => csvDownload("edubridge-enrollment.csv", [
   ["Enrollment ID", r => r.registrationId], ["Student ID", r => r.studentId], ["Student", r => r.studentName],
   ["Course code", r => r.courseCode], ["Course", r => r.courseName], ["Status", r => r.status], ["Date", r => r.registrationDate]
 ], enrollments));
-$("reportAttendanceButton").addEventListener("click", () => csvDownload("campusflow-attendance.csv", [
+$("reportAttendanceButton").addEventListener("click", () => csvDownload("edubridge-attendance.csv", [
   ["Date", a => a.date], ["Student ID", a => a.studentId], ["Student", a => a.studentName],
   ["Course code", a => a.courseCode], ["Course", a => a.courseName], ["Status", a => a.status]
 ], attendance));
-$("reportCoursesButton").addEventListener("click", () => csvDownload("campusflow-courses.csv", [
+$("reportCoursesButton").addEventListener("click", () => csvDownload("edubridge-courses.csv", [
   ["Course code", c => c.courseCode], ["Course name", c => c.courseName], ["Credits", c => c.credits],
   ["Capacity", c => c.capacity], ["Prerequisite", c => c.prerequisiteCode || "None"],
   ["Confirmed", c => c.confirmed], ["Waitlisted", c => c.waitlisted]
@@ -1011,7 +1011,7 @@ $("reportCoursesButton").addEventListener("click", () => csvDownload("campusflow
 $("helpButton").addEventListener("click", async () => {
   try {
     const [s, c, r, a] = await Promise.all([api("/students"), api("/courses"), api("/enrollments"), api("/attendance")]);
-    alert(`CampusFlow API status: Connected\nLogged in as: ${currentUser?.username}\nStudents: ${s.length}\nCourses: ${c.length}\nEnrollments: ${r.length}\nAttendance entries: ${a.length}`);
+    alert(`EduBridge API status: Connected\nLogged in as: ${currentUser?.username}\nStudents: ${s.length}\nCourses: ${c.length}\nEnrollments: ${r.length}\nAttendance entries: ${a.length}`);
   } catch (error) {
     alert(`Backend connection failed.\n${error.message}\nStart WebServer.java and check MySQL.`);
   }

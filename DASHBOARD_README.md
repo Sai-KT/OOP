@@ -1,4 +1,4 @@
-# CampusFlow Dashboard (Java + JDBC + MySQL)
+# EduBridge Dashboard (Java + JDBC + MySQL)
 
 Main.java, sql/schema.sql, pom.xml, README.md and DESIGN.md are NOT changed.
 

@@ -1,6 +1,6 @@
 "use strict";
 
-// CampusFlow Dedicated Administrator Login Controller
+// EduBridge Dedicated Administrator Login Controller
 const $ = id => document.getElementById(id);
 
 function showMessage(text, success = false, isStudentAttempt = false) {
