@@ -208,8 +208,29 @@ public class WebServer {
         if (!"POST".equals(ex.getRequestMethod())) { sendError(ex, 405, "Method not allowed. Supported method: POST."); return; }
         Map<String, String> form = readForm(ex);
         String portal = form.getOrDefault("portal", "").trim().toUpperCase();
+        String username = form.getOrDefault("username", "").trim();
+        String password = form.getOrDefault("password", "");
+
+        if ("ADMIN".equals(portal)) {
+            username = username.replaceAll("\\s+", "");
+        }
+
         try {
-            UserAccount user = auth.login(form.getOrDefault("username", "").trim(), form.getOrDefault("password", ""));
+            UserAccount user;
+            if ("ADMIN".equals(portal)) {
+                try {
+                    user = auth.login(username, password.trim());
+                } catch (InvalidLoginException ile) {
+                    if (password.contains(" ")) {
+                        user = auth.login(username, password.replaceAll("\\s+", ""));
+                    } else {
+                        throw ile;
+                    }
+                }
+            } else {
+                user = auth.login(username, password);
+            }
+
             // Strict portal role validation: prevent students on admin login and admins on student login
             if ("ADMIN".equals(portal) && user.getRole() != Role.ADMIN) {
                 sendError(ex, 403, "Access denied: This portal is strictly reserved for Administrators. Student accounts cannot sign in through the Admin Console.");

@@ -47,22 +47,40 @@ document.querySelectorAll("[data-toggle-password]").forEach(button => {
   });
 });
 
-// Caps Lock watcher
-(function setupCapsLock() {
+// Caps Lock watcher & space bar filter
+(function setupInputFilters() {
   const check = event => {
     if (event.getModifierState) $("adminCaps").classList.toggle("hidden", !event.getModifierState("CapsLock"));
   };
   const pw = $("adminPassword");
+  const user = $("adminUsername");
+
   pw.addEventListener("keydown", check);
   pw.addEventListener("keyup", check);
   pw.addEventListener("blur", () => $("adminCaps").classList.add("hidden"));
+
+  // Neglect spaces if space bar clicked by mistake in username or password
+  [user, pw].forEach(input => {
+    if (!input) return;
+    input.addEventListener("keydown", e => {
+      if (e.key === " " || e.code === "Space") {
+        e.preventDefault(); // Ignore space bar keypress
+      }
+    });
+    input.addEventListener("input", e => {
+      if (e.target.value.includes(" ")) {
+        e.target.value = e.target.value.replace(/\s+/g, "");
+      }
+    });
+  });
 })();
 
 // Form submission to /api/auth/login with portal=ADMIN
 $("adminLoginForm").addEventListener("submit", async event => {
   event.preventDefault();
-  const username = $("adminUsername").value.trim();
-  const password = $("adminPassword").value;
+  // Strip any accidental spaces from username and password
+  const username = $("adminUsername").value.replace(/\s+/g, "");
+  const password = $("adminPassword").value.replace(/\s+/g, "");
   if (!username || !password) {
     showMessage("Please enter your administrator username and password.");
     return;
