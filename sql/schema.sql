@@ -59,3 +59,35 @@ CREATE TABLE IF NOT EXISTS department_grades (
     CONSTRAINT fk_department_grade_department FOREIGN KEY (department_id) REFERENCES departments(department_id),
     CONSTRAINT chk_department_grade_marks CHECK (marks >= 0 AND marks <= 100)
 );
+
+-- Attendance tracking table
+CREATE TABLE IF NOT EXISTS attendance (
+    attendance_id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id INT NOT NULL,
+    course_code VARCHAR(20) NOT NULL,
+    attendance_date DATE NOT NULL,
+    status VARCHAR(10) NOT NULL,
+    UNIQUE KEY uq_attendance (student_id, course_code, attendance_date),
+    CONSTRAINT fk_attendance_student FOREIGN KEY (student_id) REFERENCES students(student_id),
+    CONSTRAINT fk_attendance_course FOREIGN KEY (course_code) REFERENCES courses(course_code)
+);
+
+-- Users table with Role-Based Access Control (RBAC) and student record linkage
+CREATE TABLE IF NOT EXISTS users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    full_name VARCHAR(100) NOT NULL,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    role VARCHAR(20) NOT NULL DEFAULT 'STUDENT',
+    student_id INT NULL,
+    password_hash CHAR(64) NOT NULL,
+    salt CHAR(32) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_user_role CHECK (role IN ('ADMIN', 'STUDENT')),
+    CONSTRAINT uq_users_student_id UNIQUE (student_id),
+    CONSTRAINT fk_users_student FOREIGN KEY (student_id) 
+        REFERENCES students(student_id) 
+        ON DELETE SET NULL 
+        ON UPDATE CASCADE
+);
+

@@ -1,0 +1,24 @@
+# Git metadata
+.git
+.gitignore
+
+# IDE & Editor files
+.vscode
+.idea
+*.iml
+.DS_Store
+
+# Maven build artifacts & logs
+target/
+*.log
+cp.txt
+
+# Local SQL dumps & scratch scripts
+*.sql
+!sql/schema.sql
+!sql/migrations/*.sql
+sample_pdfs/
+
+# Temporary directories
+scratch/
+tmp/

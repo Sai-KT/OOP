@@ -279,7 +279,11 @@ class StudentManager {
     private int countConfirmed(String courseCode) throws SQLException {
         String sql = "SELECT COUNT(*) FROM registrations WHERE course_code=? AND status='CONFIRMED'";
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, courseCode); try (ResultSet rs = ps.executeQuery()) { rs.next(); return rs.getInt(1); }
+            ps.setString(1, courseCode);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+                return 0;
+            }
         }
     }
 
@@ -307,8 +311,13 @@ class StudentManager {
     public double calculateGpa(int studentId) throws SQLException {
         String sql = "SELECT AVG(marks) FROM grades WHERE student_id=?";
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, studentId); try (ResultSet rs = ps.executeQuery()) {
-                rs.next(); double average = rs.getDouble(1); return rs.wasNull() ? 0.0 : Math.round((average / 10.0) * 100.0) / 100.0;
+            ps.setInt(1, studentId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    double average = rs.getDouble(1);
+                    return rs.wasNull() ? 0.0 : Math.round((average / 10.0) * 100.0) / 100.0;
+                }
+                return 0.0;
             }
         }
     }
@@ -332,7 +341,6 @@ class StudentManager {
 // MAIN class follows the notes' simple menu-driven/System.out.println format.
 public class Main {
     public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
         StudentManager manager = new StudentManager();
         try {
             manager.loadStudents();
@@ -344,86 +352,87 @@ public class Main {
             return;
         }
 
-        int choice = -1;
-        while (choice != 0) {
-            System.out.println("\n===== STUDENT COURSE REGISTRATION SYSTEM =====");
-            System.out.println("1. Display Students");
-            System.out.println("2. Display Courses");
-            System.out.println("3. Add Student");
-            System.out.println("4. Register Student for Course");
-            System.out.println("5. Record Grade / Calculate GPA");
-            System.out.println("6. Display Registrations");
-            System.out.println("7. Demonstrate Runtime Polymorphism");
-            System.out.println("0. Exit");
-            System.out.print("Enter choice: ");
-            try {
-                choice = Integer.parseInt(sc.nextLine().trim());
-                switch (choice) {
-                    case 1 -> manager.displayStudents();
-                    case 2 -> manager.displayCourses();
-                    case 3 -> {
-                        System.out.print("Student ID: "); int id = Integer.parseInt(sc.nextLine());
-                        System.out.print("Student name: "); String name = sc.nextLine();
-                        System.out.print("Email: "); String email = sc.nextLine();
-                        System.out.print("Semester: "); int sem = Integer.parseInt(sc.nextLine());
-                        System.out.print("Department ID (1=IT, 2=Computer): "); int dept = Integer.parseInt(sc.nextLine());
-                        System.out.print("Type (U=Undergraduate, P=Postgraduate): "); String type = sc.nextLine();
-                        // UNIT III: base reference + child object demonstrates dynamic binding.
-                        Student student = type.equalsIgnoreCase("P")
-                                ? new PostgraduateStudent(id, name, email, sem, dept)
-                                : new UndergraduateStudent(id, name, email, sem, dept);
-                        manager.addStudent(student);
-                        System.out.println("Student saved using JDBC.");
-                    }
-                    case 4 -> {
-                        System.out.print("Student ID: "); int id = Integer.parseInt(sc.nextLine());
-                        System.out.print("Course code: "); String code = sc.nextLine().trim().toUpperCase();
-                        try {
-                            // UNIT IV: try-catch-finally structured exception handling.
-                            manager.registerCourse(id, code);
-                        } catch (PrerequisiteNotMetException e) {
-                            System.out.println("Prerequisite error: " + e.getMessage());
-                        } catch (CourseFullException e) {
-                            System.out.println("Capacity/waitlist notice: " + e.getMessage());
-                        } catch (InvalidRegistrationException e) {
-                            System.out.println("Registration error: " + e.getMessage());
-                        } finally {
-                            System.out.println("Registration attempt completed."); // finally always executes
+        try (Scanner sc = new Scanner(System.in)) {
+            int choice = -1;
+            while (choice != 0) {
+                System.out.println("\n===== STUDENT COURSE REGISTRATION SYSTEM =====");
+                System.out.println("1. Display Students");
+                System.out.println("2. Display Courses");
+                System.out.println("3. Add Student");
+                System.out.println("4. Register Student for Course");
+                System.out.println("5. Record Grade / Calculate GPA");
+                System.out.println("6. Display Registrations");
+                System.out.println("7. Demonstrate Runtime Polymorphism");
+                System.out.println("0. Exit");
+                System.out.print("Enter choice: ");
+                try {
+                    choice = Integer.parseInt(sc.nextLine().trim());
+                    switch (choice) {
+                        case 1 -> manager.displayStudents();
+                        case 2 -> manager.displayCourses();
+                        case 3 -> {
+                            System.out.print("Student ID: "); int id = Integer.parseInt(sc.nextLine().trim());
+                            System.out.print("Student name: "); String name = sc.nextLine().trim();
+                            System.out.print("Email: "); String email = sc.nextLine().trim();
+                            System.out.print("Semester: "); int sem = Integer.parseInt(sc.nextLine().trim());
+                            System.out.print("Department ID (1=IT, 2=Computer): "); int dept = Integer.parseInt(sc.nextLine().trim());
+                            System.out.print("Type (U=Undergraduate, P=Postgraduate): "); String type = sc.nextLine().trim();
+                            // UNIT III: base reference + child object demonstrates dynamic binding.
+                            Student student = type.equalsIgnoreCase("P")
+                                    ? new PostgraduateStudent(id, name, email, sem, dept)
+                                    : new UndergraduateStudent(id, name, email, sem, dept);
+                            manager.addStudent(student);
+                            System.out.println("Student saved using JDBC.");
                         }
-                    }
-                    case 5 -> {
-                        System.out.print("Student ID: "); int id = Integer.parseInt(sc.nextLine());
-                        System.out.print("Course code: "); String code = sc.nextLine().trim().toUpperCase();
-                        System.out.print("Marks (0-100): "); double marks = Double.parseDouble(sc.nextLine());
-                        try {
-                            manager.recordGrade(id, code, marks);
-                        } catch (InvalidGradeException e) {
-                            System.out.println("Grade error: " + e.getMessage());
-                        } finally {
-                            System.out.println("Grade operation completed.");
+                        case 4 -> {
+                            System.out.print("Student ID: "); int id = Integer.parseInt(sc.nextLine().trim());
+                            System.out.print("Course code: "); String code = sc.nextLine().trim().toUpperCase();
+                            try {
+                                // UNIT IV: try-catch-finally structured exception handling.
+                                manager.registerCourse(id, code);
+                            } catch (PrerequisiteNotMetException e) {
+                                System.out.println("Prerequisite error: " + e.getMessage());
+                            } catch (CourseFullException e) {
+                                System.out.println("Capacity/waitlist notice: " + e.getMessage());
+                            } catch (InvalidRegistrationException e) {
+                                System.out.println("Registration error: " + e.getMessage());
+                            } finally {
+                                System.out.println("Registration attempt completed."); // finally always executes
+                            }
                         }
-                    }
-                    case 6 -> manager.displayRegistrations();
-                    case 7 -> {
-                        for (Student s : manager.getStudents().values()) {
-                            // Runtime polymorphism / dynamic binding: overridden method chosen by actual object type.
-                            System.out.println(s.getStudentName() + ": " + s.getRegistrationGuidance());
+                        case 5 -> {
+                            System.out.print("Student ID: "); int id = Integer.parseInt(sc.nextLine().trim());
+                            System.out.print("Course code: "); String code = sc.nextLine().trim().toUpperCase();
+                            System.out.print("Marks (0-100): "); double marks = Double.parseDouble(sc.nextLine().trim());
+                            try {
+                                manager.recordGrade(id, code, marks);
+                            } catch (InvalidGradeException e) {
+                                System.out.println("Grade error: " + e.getMessage());
+                            } finally {
+                                System.out.println("Grade operation completed.");
+                            }
                         }
+                        case 6 -> manager.displayRegistrations();
+                        case 7 -> {
+                            for (Student s : manager.getStudents().values()) {
+                                // Runtime polymorphism / dynamic binding: overridden method chosen by actual object type.
+                                System.out.println(s.getStudentName() + ": " + s.getRegistrationGuidance());
+                            }
+                        }
+                        case 0 -> System.out.println("Exiting Student Management System.");
+                        default -> System.out.println("Invalid menu choice.");
                     }
-                    case 0 -> System.out.println("Exiting Student Management System.");
-                    default -> System.out.println("Invalid menu choice.");
+                } catch (NumberFormatException e) {
+                    // UNIT IV: catch unchecked input conversion exception.
+                    System.out.println("Invalid numeric input. Please enter a valid number.");
+                } catch (SQLException e) {
+                    // UNIT IV: catch database exception.
+                    System.out.println("Database operation failed: " + e.getMessage());
+                } finally {
+                    // UNIT IV: finally block executes after each menu operation.
+                    // Input scanner remains open until the user exits.
                 }
-            } catch (NumberFormatException e) {
-                // UNIT IV: catch unchecked input conversion exception.
-                System.out.println("Invalid numeric input. Please enter a valid number.");
-            } catch (SQLException e) {
-                // UNIT IV: catch database exception.
-                System.out.println("Database operation failed: " + e.getMessage());
-            } finally {
-                // UNIT IV: finally block executes after each menu operation.
-                // Input scanner remains open until the user exits.
             }
         }
-        sc.close();
     }
 }

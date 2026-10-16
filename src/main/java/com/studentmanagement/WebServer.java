@@ -39,7 +39,12 @@ public class WebServer {
     private static final StudentPortalService studentService = new StudentPortalService();
     private static final String SESSION_COOKIE = "EBSESSION";
 
-    public static void main(String[] args) throws IOException {
+    private static HttpServer serverInstance;
+
+    public static synchronized HttpServer startServer(int port) throws IOException {
+        if (serverInstance != null) {
+            return serverInstance;
+        }
         // Create required tables if missing (fresh installation support)
         try {
             auth.createTable();
@@ -60,7 +65,7 @@ public class WebServer {
             System.err.println("Database startup initialization notice: " + e.getMessage());
         }
 
-        HttpServer server = HttpServer.create(new InetSocketAddress(PORT), 0);
+        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
 
         // ---------------- AUTHENTICATION ROUTES ----------------
         server.createContext("/api/auth/signup", WebServer::signup);
@@ -99,8 +104,21 @@ public class WebServer {
 
         server.setExecutor(null); // default executor
         server.start();
-        System.out.println("EduBridge dashboard running at http://localhost:" + PORT);
+        serverInstance = server;
+        System.out.println("EduBridge dashboard running at http://localhost:" + port);
         System.out.println("Serving frontend from: " + FRONTEND);
+        return server;
+    }
+
+    public static synchronized void stopServer() {
+        if (serverInstance != null) {
+            serverInstance.stop(0);
+            serverInstance = null;
+        }
+    }
+
+    public static void main(String[] args) throws IOException {
+        startServer(PORT);
     }
 
     // ===================== AUTHORIZATION WRAPPERS =====================
@@ -110,6 +128,10 @@ public class WebServer {
     private static HttpHandler adminOnly(HttpHandler handler) {
         return ex -> {
             if (handleOptions(ex)) return;
+            if ("POST".equalsIgnoreCase(ex.getRequestMethod()) && !isSameOrigin(ex)) {
+                sendError(ex, 403, "Cross-site request forbidden: Invalid request origin.");
+                return;
+            }
             UserAccount user = auth.getUser(sessionToken(ex));
             if (user == null) {
                 sendError(ex, 401, "Please log in first.");
@@ -128,6 +150,10 @@ public class WebServer {
     private static HttpHandler authenticated(HttpHandler handler) {
         return ex -> {
             if (handleOptions(ex)) return;
+            if ("POST".equalsIgnoreCase(ex.getRequestMethod()) && !isSameOrigin(ex)) {
+                sendError(ex, 403, "Cross-site request forbidden: Invalid request origin.");
+                return;
+            }
             UserAccount user = auth.getUser(sessionToken(ex));
             if (user == null) {
                 sendError(ex, 401, "Please log in first.");
@@ -244,7 +270,7 @@ public class WebServer {
                 return;
             }
             String token = auth.createSession(user);
-            ex.getResponseHeaders().add("Set-Cookie", sessionCookieHeader(token));
+            ex.getResponseHeaders().add("Set-Cookie", sessionCookieHeader(ex, token));
             send(ex, 200, userJson(user));
         } catch (InvalidLoginException e) {
             sendError(ex, 401, e.getMessage());
@@ -261,7 +287,7 @@ public class WebServer {
         if (handleOptions(ex)) return;
         if (!"POST".equals(ex.getRequestMethod())) { sendError(ex, 405, "Method not allowed. Supported method: POST."); return; }
         auth.logout(sessionToken(ex));
-        ex.getResponseHeaders().add("Set-Cookie", expiredCookieHeader());
+        ex.getResponseHeaders().add("Set-Cookie", expiredCookieHeader(ex));
         send(ex, 200, json("message", "Logged out."));
     }
 
@@ -453,7 +479,7 @@ public class WebServer {
                             ps.setInt(1, studentId); try (ResultSet rs = ps.executeQuery()) { if (!rs.next()) throw new InvalidRegistrationException("Student does not exist."); }
                         }
                         int capacity; int confirmed;
-                        try (PreparedStatement ps = con.prepareStatement("SELECT c.capacity, (SELECT COUNT(*) FROM registrations r WHERE r.course_code=c.course_code AND r.status='CONFIRMED') FROM courses c WHERE c.course_code=?")) {
+                        try (PreparedStatement ps = con.prepareStatement("SELECT c.capacity, (SELECT COUNT(*) FROM registrations r WHERE r.course_code=c.course_code AND r.status='CONFIRMED') FROM courses c WHERE c.course_code=? FOR UPDATE")) {
                             ps.setString(1, courseCode); try (ResultSet rs = ps.executeQuery()) { if (!rs.next()) throw new InvalidRegistrationException("Course does not exist."); capacity=rs.getInt(1); confirmed=rs.getInt(2); }
                         }
                         try (PreparedStatement ps = con.prepareStatement("SELECT registration_id FROM registrations WHERE student_id=? AND course_code=?")) {
@@ -553,7 +579,14 @@ public class WebServer {
     private static double calculateDepartmentGpa(int studentId) throws SQLException {
         String sql = "SELECT AVG(marks) FROM department_grades WHERE student_id=?";
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, studentId); try (ResultSet rs = ps.executeQuery()) { rs.next(); double avg = rs.getDouble(1); return rs.wasNull() ? 0.0 : Math.round(avg * 10.0) / 100.0; }
+            ps.setInt(1, studentId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    double avg = rs.getDouble(1);
+                    return rs.wasNull() ? 0.0 : Math.round(avg * 10.0) / 100.0;
+                }
+                return 0.0;
+            }
         }
     }
 
@@ -1014,6 +1047,9 @@ public class WebServer {
         byte[] bytes = Files.readAllBytes(file);
         ex.getResponseHeaders().set("Content-Type", type);
         ex.getResponseHeaders().set("Cache-Control", "no-store");
+        ex.getResponseHeaders().set("X-Content-Type-Options", "nosniff");
+        ex.getResponseHeaders().set("X-Frame-Options", "DENY");
+        ex.getResponseHeaders().set("Referrer-Policy", "strict-origin-when-cross-origin");
         ex.sendResponseHeaders(200, bytes.length);
         try (OutputStream os = ex.getResponseBody()) {
             os.write(bytes);
@@ -1022,18 +1058,60 @@ public class WebServer {
 
     // ===================== SECURITY & HELPERS =====================
 
-    private static boolean isCookieSecure() {
-        return "true".equalsIgnoreCase(System.getenv("COOKIE_SECURE"));
+    private static boolean isCookieSecure(HttpExchange ex) {
+        String env = System.getenv("COOKIE_SECURE");
+        if ("true".equalsIgnoreCase(env)) return true;
+        if ("false".equalsIgnoreCase(env)) return false;
+        if (ex != null) {
+            String proto = ex.getRequestHeaders().getFirst("X-Forwarded-Proto");
+            if ("https".equalsIgnoreCase(proto)) return true;
+            String forwarded = ex.getRequestHeaders().getFirst("Forwarded");
+            if (forwarded != null && forwarded.toLowerCase().contains("proto=https")) return true;
+        }
+        return false;
     }
 
-    private static String sessionCookieHeader(String token) {
+    static boolean isCookieSecure() {
+        return isCookieSecure(null);
+    }
+
+    private static String sessionCookieHeader(HttpExchange ex, String token) {
         return SESSION_COOKIE + "=" + token + "; Path=/; HttpOnly; SameSite=Lax"
-                + (isCookieSecure() ? "; Secure" : "");
+                + (isCookieSecure(ex) ? "; Secure" : "");
     }
 
-    private static String expiredCookieHeader() {
+    static String sessionCookieHeader(String token) {
+        return sessionCookieHeader(null, token);
+    }
+
+    private static String expiredCookieHeader(HttpExchange ex) {
         return SESSION_COOKIE + "=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax"
-                + (isCookieSecure() ? "; Secure" : "");
+                + (isCookieSecure(ex) ? "; Secure" : "");
+    }
+
+    static String expiredCookieHeader() {
+        return expiredCookieHeader(null);
+    }
+
+    // Defense-in-depth CSRF verification for state-changing requests
+    private static boolean isSameOrigin(HttpExchange ex) {
+        String origin = ex.getRequestHeaders().getFirst("Origin");
+        if (origin == null || origin.isBlank()) {
+            String referer = ex.getRequestHeaders().getFirst("Referer");
+            if (referer == null || referer.isBlank()) return true;
+            origin = referer;
+        }
+        String host = ex.getRequestHeaders().getFirst("Host");
+        if (host == null || host.isBlank()) return true;
+        try {
+            java.net.URI uri = java.net.URI.create(origin);
+            String originHost = uri.getHost();
+            if (originHost == null) return false;
+            String expectedHost = host.contains(":") ? host.split(":", 2)[0] : host;
+            return originHost.equalsIgnoreCase(expectedHost);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     // Reads the session token from the "Cookie" header.
@@ -1179,6 +1257,9 @@ public class WebServer {
     private static void sendText(HttpExchange ex, int status, String type, String body) throws IOException {
         byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
         ex.getResponseHeaders().set("Content-Type", type);
+        ex.getResponseHeaders().set("X-Content-Type-Options", "nosniff");
+        ex.getResponseHeaders().set("X-Frame-Options", "DENY");
+        ex.getResponseHeaders().set("Referrer-Policy", "strict-origin-when-cross-origin");
         ex.sendResponseHeaders(status, bytes.length);
         try (OutputStream os = ex.getResponseBody()) {
             os.write(bytes);

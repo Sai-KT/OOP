@@ -26,6 +26,7 @@ public class RbacIntegrationTest {
 
     @BeforeAll
     static void setUp() throws Exception {
+        ensureServerRunning();
         auth = new AuthManager();
         auth.createTable();
         auth.bootstrapAdmin();
@@ -34,6 +35,18 @@ public class RbacIntegrationTest {
              Statement st = con.createStatement()) {
             st.executeUpdate("UPDATE users SET student_id = 101 WHERE username = 'raj101'");
             st.executeUpdate("UPDATE users SET student_id = 102 WHERE username = 'ananya102'");
+        }
+    }
+
+    private static void ensureServerRunning() {
+        try (java.net.Socket s = new java.net.Socket("localhost", 8080)) {
+            return;
+        } catch (Exception ignored) {
+        }
+        try {
+            WebServer.startServer(8080);
+        } catch (Exception e) {
+            System.err.println("Notice: Could not auto-start WebServer for test: " + e.getMessage());
         }
     }
 
